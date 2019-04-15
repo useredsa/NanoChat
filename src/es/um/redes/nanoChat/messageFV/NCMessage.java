@@ -65,6 +65,8 @@ public abstract class NCMessage {
 			case INVALID_CODE:
 				return null;
 			case REGISTER:
+			case CREATE:
+			case ENTER:
 				return NCNameMessage.readFromString(op, message);
 			case ROOMS_INFO:
 				return NCInfoMessage.readFromString(op, message);

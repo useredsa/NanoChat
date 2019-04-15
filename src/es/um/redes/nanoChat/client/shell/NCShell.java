@@ -16,7 +16,7 @@ public class NCShell {
 	 */
 	private Scanner reader;
 
-	byte command = NCCommands.COM_INVALID;
+	NCCommands command = NCCommands.INVALID;
 	String[] commandArgs = new String[0];
 
 	public NCShell() {
@@ -27,7 +27,7 @@ public class NCShell {
 	}
 
 	//devuelve el comando introducido por el usuario
-	public byte getCommand() {
+	public NCCommands getCommand() {
 		return command;
 	}
 
@@ -63,20 +63,21 @@ public class NCShell {
 			command = NCCommands.stringToCommand(st.nextToken());
 			//Dependiendo del comando...
 			switch (command) {
-			case NCCommands.COM_INVALID:
+			case INVALID:
 				//El comando no es válido
 				System.out.println("Invalid command");
 				continue;
-			case NCCommands.COM_HELP:
+			case HELP:
 				//Mostramos la ayuda
 				NCCommands.printCommandsHelp();
 				continue;
-			case NCCommands.COM_QUIT:
-			case NCCommands.COM_ROOMLIST:
+			case QUIT:
+			case ROOMLIST:
 				//Estos comandos son válidos sin parámetros
 				break;
-			case NCCommands.COM_ENTER:
-			case NCCommands.COM_NICK:
+			case CREATE:
+			case ENTER:
+			case NICK:
 				//Estos requieren un parámetro
 				while (st.hasMoreTokens()) {
 					vargs.add(st.nextToken());
@@ -116,7 +117,7 @@ public class NCShell {
 					if (ncclient.isDataAvailable()) {
 						//Si el flujo de entrada tiene datos entonces el comando actual es SOCKET_IN y debemos salir
 						System.out.println("* Message received from server...");
-						command = NCCommands.COM_SOCKET_IN;
+						command = NCCommands.SOCKET_IN;
 						return null;
 					}
 					else
@@ -128,7 +129,7 @@ public class NCShell {
 					//Puesto que estamos sondeando las dos entradas de forma continua, esperamos para evitar un consumo alto de CPU
 					TimeUnit.MILLISECONDS.sleep(50);
 				} catch (IOException | InterruptedException e) {
-					command = NCCommands.COM_INVALID;
+					command = NCCommands.INVALID;
 					return null;
 				}				
 			}
@@ -139,17 +140,17 @@ public class NCShell {
 			}
 			command = NCCommands.stringToCommand(st.nextToken());
 			switch (command) {
-			case NCCommands.COM_INVALID:
+			case INVALID:
 				System.out.println("Invalid command ("+input+")");
 				continue;
-			case NCCommands.COM_HELP:
+			case HELP:
 				NCCommands.printCommandsHelp();
 				continue;
-			case NCCommands.COM_ROOMINFO:
+			case ROOMINFO:
 				break;
-			case NCCommands.COM_EXIT:
+			case EXIT:
 				break;
-			case NCCommands.COM_SEND:
+			case SEND:
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
 					message.append(st.nextToken()+" "); 
@@ -165,12 +166,18 @@ public class NCShell {
 	}
 
 
-	//Algunos comandos requieren un parámetro
-	//Este método comprueba si se proporciona parámetro para los comandos 
+	// Algunos comandos requieren un parámetro
+	// Este método comprueba si se proporciona parámetro para los comandos
+	//TODO parsear comandos en el clase enum, y hacer para que salga automaticamente getName() y con el numero de comandos, etc
 	private boolean validateCommandArguments(String[] args) {
 		switch(this.command) {
+		// CREATE requires the room name
+		case CREATE:
+			if (args.length == 0 || args.length > 1) {
+				System.out.println("Correct use: " + command.getName() + " <room>");
+			}
 		//enter requiere el parámetro <room>
-		case NCCommands.COM_ENTER:
+		case ENTER:
 			if (args.length == 0 || args.length > 1) {
 				System.out
 						.println("Correct use: enter <room>");
@@ -178,7 +185,7 @@ public class NCShell {
 			}
 			break;
 		//nick requiere el parámetro <nickname>
-		case NCCommands.COM_NICK:
+		case NICK:
 			if (args.length == 0 || args.length > 1) {
 				System.out
 						.println("Correct use: nick <nickname>");
@@ -186,7 +193,7 @@ public class NCShell {
 			}
 			break;
 		//send requiere el parámetro <message>
-		case NCCommands.COM_SEND:
+		case SEND:
 			if (args.length == 0) {
 				System.out
 						.println("Correct use: send <message>");

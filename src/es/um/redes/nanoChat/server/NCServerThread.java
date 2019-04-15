@@ -126,11 +126,29 @@ public class NCServerThread extends Thread {
 	}
 
 	private void processRoomMessages()  {
-		//TODO Comprobamos los mensajes que llegan hasta que el usuario decida salir de la sala
+		// Loop until the user exits this room
 		boolean exit = false;
-		while (!exit) {
-			//TODO Se recibe el mensaje enviado por el usuario
-			//TODO Se analiza el código de operación del mensaje y se trata en consecuencia
+		while (!exit) {			
+			try {
+				// Read new message
+				NCMessage message = NCMessage.readMessageFromSocket(dis);
+				switch (message.getOp()) {
+				case SEND:
+					break;
+				case INFO:
+					break;
+					
+				case EXIT:
+					exit = true;
+					break;
+					
+				default:
+					break;
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block ver por qué se genera una excepción
+				e.printStackTrace();
+			}
 		}
 	}
 }

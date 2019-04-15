@@ -1,87 +1,55 @@
 package es.um.redes.nanoChat.client.shell;
 
 public enum NCCommands {
-	/**
-	 * Códigos para todos los comandos soportados por el shell
-	 */
-	public static final byte COM_INVALID = 0;
-	public static final byte COM_ROOMLIST = 1;
-	public static final byte COM_ENTER = 2;
-	public static final byte COM_NICK = 3;
-	public static final byte COM_SEND = 4;
-	public static final byte COM_EXIT = 5;
-	public static final byte COM_ROOMINFO = 7;
-	public static final byte COM_QUIT = 8;
-	public static final byte COM_HELP = 9;
-	public static final byte COM_SOCKET_IN = 101;
+	SOCKET_IN	(NCCommands.NON_USER, NCCommands.NON_USER),
+	INVALID		(NCCommands.NON_USER, NCCommands.NON_USER),
+	ROOMLIST	("roomlist","provides a list of available rooms to chat"),
+	CREATE		("create",	"create a new <room>"),
+	ENTER		("enter", 	"enter a particular <room>"),
+	NICK		("nick",	"to set the <nickname> in the server"),
+	SEND		("send",	"to send a <message> in the chat"),
+	EXIT		("exit",	"to leave the current room"),
+	ROOMINFO	("info",	"shows the information of the room"),
+	QUIT		("quit",	"to quit the application"),
+	HELP		("help",	"shows this information");
 	
-	/**
-	 * Códigos de los comandos válidos que puede
-	 * introducir el usuario del shell. El orden
-	 * es importante para relacionarlos con la cadena
-	 * que debe introducir el usuario y con la ayuda
-	 */
-	private static final Byte[] _valid_user_commands = { 
-		COM_ROOMLIST, 
-		COM_ENTER,
-		COM_NICK,
-		COM_SEND,
-		COM_EXIT, 
-		COM_ROOMINFO,
-		COM_QUIT,
-		COM_HELP
-		};
-
-	/**
-	 * cadena exacta de cada orden
-	 */
-	private static final String[] _valid_user_commands_str = {
-		"roomlist",
-		"enter",
-		"nick",
-		"send",
-		"exit",
-		"info",
-		"quit",
-		"help" };
-
-	/**
-	 * Mensaje de ayuda para cada orden
-	 */
-	private static final String[] _valid_user_commands_help = {
-		"provides a list of available rooms to chat",
-		"enter a particular <room>",
-		"to set the <nickname> in the server",
-		"to send a <message> in the chat",
-		"to leave the current room", 
-		"shows the information of the room",
-		"to quit the application",
-		"shows this information"};
-
-	/**
-	 * Transforma una cadena introducida en el código de comando correspondiente
-	 */
-	public static byte stringToCommand(String comStr) {
-		//Busca entre los comandos si es válido y devuelve su código
-		for (int i = 0;
-		i < _valid_user_commands_str.length; i++) {
-			if (_valid_user_commands_str[i].equalsIgnoreCase(comStr)) {
-				return _valid_user_commands[i];
-			}
-		}
-		//Si no se corresponde con ninguna cadena entonces devuelve el código de comando no válido
-		return COM_INVALID;
+	
+	private static final String NON_USER = "NON-USER";
+	
+	
+	private final String name;			// Command name
+	private final String helpMessage;	// Command help message shown with the help command
+										// Value NON_USER not to display
+	
+	private NCCommands (String name, String message) {
+		this.name = name;
+		helpMessage = message;
+	}
+		
+	// Gets Command from string
+	public static NCCommands stringToCommand(String comStr) {
+		// Search within commands for the string
+		for (NCCommands comm : NCCommands.values())
+			if (comm.name.equals(comStr))
+				return comm;
+		// Or return invalid if no match was found
+		return INVALID;
 	}
 
-	/**
-	 * Imprime la lista de comandos y la ayuda de cada uno
-	 */
+	// Prints list of valid commands and the help message of each one.
 	public static void printCommandsHelp() {
 		System.out.println("List of commands:");
-		for (int i = 0; i < _valid_user_commands_str.length; i++) {
-			System.out.println(_valid_user_commands_str[i] + " -- "
-					+ _valid_user_commands_help[i]);
-		}		
+		for (NCCommands comm : NCCommands.values())
+			if (!comm.helpMessage.equals(NON_USER))
+				System.out.println(comm.name + " -- " + comm.helpMessage);
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getHelpMessage() {
+		return helpMessage;
 	}
 }	
 

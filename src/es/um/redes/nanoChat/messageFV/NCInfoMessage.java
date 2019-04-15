@@ -48,6 +48,7 @@ public class NCInfoMessage extends NCMessage {
 		sb.append(ROOMS_FIELD + DELIMITER);
 		for (NCRoomDescription des : rooms) {
 			if (!first) sb.append(SEPARATOR);
+			else first = false;
 			sb.append(des.roomName); //TODO make private?
 		}
 		sb.append(END_LINE);
@@ -60,7 +61,7 @@ public class NCInfoMessage extends NCMessage {
 				sb.append(user);
 			}
 			sb.append(END_LINE);
-			sb.append(LAST_MESSAGE_FIELD + DELIMITER + des.timeLastMessage + SEPARATOR + "EL MENSAJE NO LO VES GILIPOLLAS" + END_LINE); //TODO change phrase
+			sb.append(LAST_MESSAGE_FIELD + DELIMITER + des.timeLastMessage + END_LINE);
 		}
 		
 		
@@ -118,9 +119,7 @@ public class NCInfoMessage extends NCMessage {
 			field = lines[line+1].substring(0, pos).toLowerCase();
 			//TODO ver si cambiar la clase NCRoomDescription
 			//para hacer que hour sea string y utilizar DateFormat en ella
-			long hour = Long.parseLong(lines[line+1].substring(pos+1, lines[line+1].indexOf(SEPARATOR)).trim());
-			//TODO ver que hacer con message
-			String last_message = lines[line+1].substring(lines[line+1].indexOf(SEPARATOR), lines[line+1].indexOf(END_LINE)).trim(); //TODO use
+			long hour = Long.parseLong(lines[line+1].substring(pos+1).trim());
 			if (field.equalsIgnoreCase(LAST_MESSAGE_FIELD)) {
 				NCRoomDescription description = new NCRoomDescription(room_names[i], new ArrayList<String>(Arrays.asList(users)), hour);
 				rooms.add(description);

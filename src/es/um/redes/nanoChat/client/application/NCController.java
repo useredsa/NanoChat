@@ -26,7 +26,7 @@ public class NCController {
 	//Shell para leer comandos de usuario de la entrada estándar
 	private NCShell shell;
 	//Último comando proporcionado por el usuario
-	private byte currentCommand;
+	private NCCommands currentCommand;
 	//Nick del usuario
 	private String nickname;
 	//Sala de chat en la que se encuentra el usuario (si está en alguna)
@@ -44,12 +44,12 @@ public class NCController {
 	}
 
 	//Devuelve el comando actual introducido por el usuario
-	public byte getCurrentCommand() {		
-		return this.currentCommand;
+	public NCCommands getCurrentCommand() {		
+		return currentCommand;
 	}
 
 	//Establece el comando actual
-	public void setCurrentCommand(byte command) {
+	public void setCurrentCommand(NCCommands command) {
 		currentCommand = command;
 	}
 
@@ -57,14 +57,15 @@ public class NCController {
 	public void setCurrentCommandArguments(String[] args) {
 		//Comprobaremos también si el comando es válido para el estado actual del autómata
 		switch (currentCommand) {
-		case NCCommands.COM_NICK:
+		case NICK:
 			if (clientStatus == PRE_REGISTRATION)
 				nickname = args[0];
 			break;
-		case NCCommands.COM_ENTER:
+		case CREATE:
+		case ENTER:
 			room = args[0];
 			break;
-		case NCCommands.COM_SEND:
+		case SEND:
 			chatMessage = args[0];
 			break;
 		default:
@@ -74,27 +75,35 @@ public class NCController {
 	//Procesa los comandos introducidos por un usuario que aún no está dentro de una sala
 	public void processCommand() {
 		switch (currentCommand) {
-		case NCCommands.COM_NICK:
+		case NICK:
 			if (clientStatus == PRE_REGISTRATION)
 				registerNickName();
 			else
 				System.out.println("* You have already registered a nickname ("+nickname+")");
 			break;
-		case NCCommands.COM_ROOMLIST:
+		case ROOMLIST:
 			// LLamar a getAndShowRooms() si el estado actual del autómata lo permite
 			if(clientStatus == OUT_ROOM) //TODO se supone que ya estas fuera, no?
 				getAndShowRooms();
 			else // O informarle que no le está permitido
 				System.out.println("* You can't have the rooms right now");
-			break;			
-		case NCCommands.COM_ENTER:
+			break;
+		
+		case CREATE:
+			if (clientStatus == OUT_ROOM)
+				createRoom();
+			else
+				System.out.println("You can only create a room in the chats room.");
+			break;
+			
+		case ENTER:
 			// LLamar a enterChat() si el estado actual del autómata lo permite
 			if  (clientStatus == OUT_ROOM)
 				enterChat();
 			else // Si no está permitido informar al usuario
 				System.out.println("You can't enter a room now.");
 			break;
-		case NCCommands.COM_QUIT:
+		case QUIT:
 			//Cuando salimos tenemos que cerrar todas las conexiones y sockets abiertos
 			ncConnector.disconnect();			
 			directoryConnector.close();
@@ -131,6 +140,29 @@ public class NCController {
 			System.out.println(des.toPrintableString());
 		}
 	}
+	
+	// Process request of type create
+	private void createRoom() {
+		try {
+			boolean success = ncConnector.createRoom(room);
+			if (!success) {
+				System.out.println("You couldn't create a room called " + room); //TODO manejar casos nombre repetido y demás
+				return;
+			}
+			
+			System.out.println("You created the room " + room + ". You are now inside.");
+			clientStatus = IN_ROOM;
+		} catch (IOException e) {
+			System.err.println("Something went wrong while creating a room"); //TODO especificar qué
+			e.printStackTrace();
+		}
+		
+		//TODO copiado de abajo, refactorizar
+		do {
+			readRoomCommandFromShell();
+			processRoomCommand();
+		} while (currentCommand != NCCommands.EXIT);
+	}
 
 	// Método para tramitar la solicitud de acceso del usuario a una sala concreta
 	private void enterChat() {
@@ -155,28 +187,25 @@ public class NCController {
 			//Pasamos a aceptar sólo los comandos que son válidos dentro de una sala
 			readRoomCommandFromShell();
 			processRoomCommand();
-		} while (currentCommand != NCCommands.COM_EXIT);
-		System.out.println("* You are out of the room");
-		// Llegados a este punto el usuario ha querido salir de la sala, cambiamos el estado del autómata
-		clientStatus = OUT_ROOM;
+		} while (currentCommand != NCCommands.EXIT);
 	}
 
 	//Método para procesar los comandos específicos de una sala
 	private void processRoomCommand() {
 		switch (currentCommand) {
-		case NCCommands.COM_ROOMINFO:
+		case ROOMINFO:
 			//El usuario ha solicitado información sobre la sala y llamamos al método que la obtendrá
 			getAndShowInfo();
 			break;
-		case NCCommands.COM_SEND:
+		case SEND:
 			//El usuario quiere enviar un mensaje al chat de la sala
 			sendChatMessage();
 			break;
-		case NCCommands.COM_SOCKET_IN:
+		case SOCKET_IN:
 			//En este caso lo que ha sucedido es que hemos recibido un mensaje desde la sala y hay que procesarlo
 			processIncommingMessage();
 			break;
-		case NCCommands.COM_EXIT:
+		case EXIT:
 			//El usuario quiere salir de la sala
 			exitTheRoom();
 		}		
@@ -190,8 +219,15 @@ public class NCController {
 
 	//Método para notificar al servidor que salimos de la sala
 	private void exitTheRoom() {
-		//TODO Mandamos al servidor el mensaje de salida
-		//TODO Cambiamos el estado del autómata para indicar que estamos fuera de la sala
+		// Mandamos al servidor el mensaje de salida
+		try {
+			ncConnector.leaveRoom();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block (Ver por qué pasa)
+			e.printStackTrace();
+		}
+		clientStatus = OUT_ROOM;
+		System.out.println("* You are out of the room");
 	}
 
 	//Método para enviar un mensaje al chat de la sala
@@ -266,7 +302,7 @@ public class NCController {
 
 	//Método que comprueba si el usuario ha introducido el comando para salir de la aplicación
 	public boolean shouldQuit() {
-		return currentCommand == NCCommands.COM_QUIT;
+		return currentCommand == NCCommands.QUIT;
 	}
 
 }

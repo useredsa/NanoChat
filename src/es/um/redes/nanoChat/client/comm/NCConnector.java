@@ -97,9 +97,9 @@ public class NCConnector {
 	}
 	
 	//Método para salir de una sala
-	public void leaveRoom(String room) throws IOException {
+	public void leaveRoom() throws IOException {
 		//Funcionamiento resumido: SND(EXIT_ROOM)
-		//TODO completar el método
+		dos.writeUTF(new NCControlMessage(NCMessageOp.EXIT).toEncodedString());
 	}
 	
 	//Método que utiliza el Shell para ver si hay datos en el flujo de entrada
