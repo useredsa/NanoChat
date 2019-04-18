@@ -14,6 +14,7 @@ OK
 DENIED 
 REPEATED
 KICKED
+QUIT //TODO revisar jm
 */
 public class NCControlMessage extends NCMessage {
 	//TODO considerar hacer la clase NCMessage esta clase

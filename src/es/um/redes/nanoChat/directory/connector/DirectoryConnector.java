@@ -16,7 +16,7 @@ public class DirectoryConnector {
 	//Tamano maximo del paquete UDP (los mensajes intercambiados son muy cortos)
 	private static final int PACKET_MAX_SIZE = 128;
 	//Puerto en el que atienden los servidores de directorio
-	private static final int DEFAULT_PORT = 6868;
+	private static final int DEFAULT_PORT = 6868; 
 	//Valor del TIMEOUT
 	private static final int TIMEOUT = 1000;
 	private static final int MAX_TRIES_AFTER_TIMEOUT = 7;

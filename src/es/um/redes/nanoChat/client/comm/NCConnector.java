@@ -13,6 +13,7 @@ import es.um.redes.nanoChat.messageFV.NCInfoMessage;
 import es.um.redes.nanoChat.messageFV.NCMessage;
 import es.um.redes.nanoChat.messageFV.NCMessageOp;
 import es.um.redes.nanoChat.messageFV.NCNameMessage;
+import es.um.redes.nanoChat.messageFV.NCTextMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
 //Esta clase proporciona la funcionalidad necesaria para intercambiar mensajes entre el cliente y el servidor de NanoChat
@@ -29,7 +30,7 @@ public class NCConnector {
 		dis = new DataInputStream(socket.getInputStream());
 	}
 
-
+	//TODO esto para que era?
 	// Método para registrar el nick en el servidor. Nos informa sobre si la inscripción se hizo con éxito o no.
 	public boolean registerNickname_UnformattedMessage(String nick) throws IOException {
 		// Funcionamiento resumido: SEND(nick) and RCV(NICK_OK) or RCV(NICK_DUPLICATED)
@@ -108,7 +109,29 @@ public class NCConnector {
 	}
 	
 	//IMPORTANTE!!
-	//TODO Es necesario implementar métodos para recibir y enviar mensajes de chat a una sala
+	//Es necesario implementar métodos para recibir y enviar mensajes de chat a una sala
+	//TODO revisar jm
+	//Metodo para mandar un DM a una persona de la sala de chat
+	public void sendMessage(String receiver, String text) throws IOException{
+		dos.writeUTF(new NCTextMessage(NCMessageOp.DM, receiver, text).toEncodedString());
+	}
+	//Metodo para mandar un mensaje a toda la sala de chat
+	public void sendBroadcastMessage(String text) throws IOException{
+		dos.writeUTF(new NCNameMessage(NCMessageOp.SEND, text).toEncodedString());
+	}
+	//Metodo para recibir mensajes de chat de una sala
+	public NCMessage receiveMessage() { 
+		try {
+			NCMessage message = NCMessage.readMessageFromSocket(dis);
+			return message;
+		} catch (IOException e) {
+			// TODO revisar
+			System.err.println("* It had been a problem while receiving messages");
+			e.printStackTrace();
+			return null;
+		}
+		
+	}
 	
 	//Método para pedir la descripción de una sala
 	public NCRoomDescription getRoomInfo(String room) throws IOException {
@@ -122,6 +145,12 @@ public class NCConnector {
 	//Método para cerrar la comunicación con la sala
 	//TODO (Opcional) Enviar un mensaje de salida del servidor de Chat
 	public void disconnect() {
+		try {// TODO revisar jm
+			dos.writeUTF(new NCControlMessage(NCMessageOp.QUIT).toEncodedString());
+		} catch (IOException e1) {
+			System.out.println("* There was an error while you were being deleted from the server");
+			e1.printStackTrace();
+		}
 		try {
 			if (socket != null) {
 				socket.close();

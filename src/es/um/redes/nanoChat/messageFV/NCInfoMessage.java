@@ -58,13 +58,12 @@ public class NCInfoMessage extends NCMessage {
 			sb.append(USERS_FIELD + DELIMITER);
 			for (String user : des.members) {
 				if (!first) sb.append(SEPARATOR);
+				else first = false;
 				sb.append(user);
 			}
 			sb.append(END_LINE);
 			sb.append(LAST_MESSAGE_FIELD + DELIMITER + des.timeLastMessage + END_LINE);
 		}
-		
-		
 		sb.append(END_LINE); // Marcamos el final del mensaje
 		return sb.toString(); // Se obtiene el mensaje
 

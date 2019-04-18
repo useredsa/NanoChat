@@ -8,6 +8,9 @@ import es.um.redes.nanoChat.client.comm.NCConnector;
 import es.um.redes.nanoChat.client.shell.NCCommands;
 import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
+import es.um.redes.nanoChat.messageFV.NCMessage;
+import es.um.redes.nanoChat.messageFV.NCMessageOp;
+import es.um.redes.nanoChat.messageFV.NCTextMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
 public class NCController {
@@ -55,7 +58,7 @@ public class NCController {
 
 	//Registra en atributos internos los posibles parámetros del comando tecleado por el usuario
 	public void setCurrentCommandArguments(String[] args) {
-		//Comprobaremos también si el comando es válido para el estado actual del autómata
+		//Comprobaremos también si el comando es válido para el estado actual del autómata //TODO
 		switch (currentCommand) {
 		case NICK:
 			if (clientStatus == PRE_REGISTRATION)
@@ -103,12 +106,15 @@ public class NCController {
 			else // Si no está permitido informar al usuario
 				System.out.println("You can't enter a room now.");
 			break;
+		//case RENAME: //TODO	
+			
 		case QUIT:
 			//Cuando salimos tenemos que cerrar todas las conexiones y sockets abiertos
-			ncConnector.disconnect();			
+			ncConnector.disconnect();	//TODO revisar jm		
 			directoryConnector.close();
 			break;
 		default:
+			System.out.println("* You can't use that command here"); //TODO revisar
 		}
 	}
 	
@@ -197,10 +203,12 @@ public class NCController {
 			//El usuario ha solicitado información sobre la sala y llamamos al método que la obtendrá
 			getAndShowInfo();
 			break;
+		//case DM: //TODO
 		case SEND:
 			//El usuario quiere enviar un mensaje al chat de la sala
 			sendChatMessage();
 			break;
+		
 		case SOCKET_IN:
 			//En este caso lo que ha sucedido es que hemos recibido un mensaje desde la sala y hay que procesarlo
 			processIncommingMessage();
@@ -223,7 +231,7 @@ public class NCController {
 		try {
 			ncConnector.leaveRoom();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block (Ver por qué pasa)
+			// TODO  (Ver por qué pasa)
 			e.printStackTrace();
 		}
 		clientStatus = OUT_ROOM;
@@ -232,14 +240,30 @@ public class NCController {
 
 	//Método para enviar un mensaje al chat de la sala
 	private void sendChatMessage() {
-		//TODO Mandamos al servidor un mensaje de chat
+		//Mandamos al servidor un mensaje de chat //TODO revisar jm
+		try {
+			ncConnector.sendBroadcastMessage(chatMessage);
+		} catch (IOException e) {
+			System.out.println("* Your message wasn't sent");
+			//e.printStackTrace();
+		}
 	}
 
 	//Método para procesar los mensajes recibidos del servidor mientras que el shell estaba esperando un comando de usuario
 	private void processIncommingMessage() {		
-		//TODO Recibir el mensaje
+		//Recibir el mensaje
+		NCMessage message = ncConnector.receiveMessage();
 		//TODO En función del tipo de mensaje, actuar en consecuencia
-		//TODO (Ejemplo) En el caso de que fuera un mensaje de chat de broadcast mostramos la información de quién envía el mensaje y el mensaje en sí
+		switch(message.getOp()){
+			case NEW_DM:
+				System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
+			//(Ejemplo) En el caso de que fuera un mensaje de chat de broadcast mostramos la información de quién envía el mensaje y el mensaje en sí
+			case NEW_MESSAGE:
+				System.out.println(((NCTextMessage)message).getUser()+": "+((NCTextMessage)message).getText());
+			//case KICKED:
+			//case INFO: //TODO cual era el NCMessageOp que devolvia un INFO de la sala?
+		}
+		
 	}
 
 	//MNétodo para leer un comando de la sala 

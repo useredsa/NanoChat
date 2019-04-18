@@ -51,7 +51,9 @@ class NCServerManager {
 	
 	//Elimina al usuario del servidor
 	public synchronized void removeUser(String user) {
-		//TODO Elimina al usuario del servidor
+		// Elimina al usuario del servidor
+		//TODO revisar jm
+		users.remove(user);
 	}
 	
 	// Registers a room manager, therefore creating a new room 
@@ -88,9 +90,19 @@ class NCServerManager {
 	}
 	
 	//Un usuario deja la sala en la que estaba 
-	public synchronized void leaveRoom(String u, String room) {
-		//TODO Verificamos si la sala existe
-		//TODO Si la sala existe sacamos al usuario de la sala
-		//TODO Decidir qué hacer si la sala se queda vacía
+	public synchronized void leaveRoom(String u, String room) { 
+		// Verificamos si la sala existe
+		//TODO revisar jm
+		if(rooms.containsKey(room)) {
+			// Si la sala existe sacamos al usuario de la sala
+			rooms.get(room).removeUser(u);
+			//TODO Decidir qué hacer si la sala se queda vacía ¿OH MAMMA QUE HACHEMOS AQUI?(me gustaria que lo hablasemos) TEMPORAL
+			if(rooms.get(room).usersInRoom() == 0) {
+				rooms.remove(room);
+				System.out.println("* The room "+room+" was deleted");
+			}
+				
+				
+		}	
 	}
 }

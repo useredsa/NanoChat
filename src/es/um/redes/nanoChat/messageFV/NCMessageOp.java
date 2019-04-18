@@ -1,6 +1,7 @@
 package es.um.redes.nanoChat.messageFV;
 
 public enum NCMessageOp {
+	//Users opcodes
 	REGISTER((byte) 1, "Register"),
 	ROOMS_LIST((byte) 2, "Room List"), 
 	CREATE((byte) 3, "Create"), 
@@ -12,7 +13,9 @@ public enum NCMessageOp {
 	DM((byte) 8, "Direct Message"), 
 	UPLOAD((byte) 9, "Upload"), 
 	EXIT((byte) 10, "Exit"), 
+	QUIT((byte) 11, "Quit"), //TODO revisar jm
 	
+	//Servers opcodes
 	INVALID_CODE((byte) 0, "Invalid Op Code"), 
 	OK((byte) 100, "Ok"), 
 	DENIED((byte) 103, "Denied"), 

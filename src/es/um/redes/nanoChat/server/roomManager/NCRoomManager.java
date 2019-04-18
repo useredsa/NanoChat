@@ -20,6 +20,9 @@ public abstract class NCRoomManager {
 	// Rename Room //TODO consider how to manage this
 	public abstract void setRoomName(String roomName);
 	
+	// Método para hacer llegar un DM enviado por un usuario u a otro v
+	public abstract void sendMessage(String u, String v, String message) throws IOException;
+	
 	public String getRoomName() {
 		return roomName;
 	}

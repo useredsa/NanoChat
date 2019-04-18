@@ -13,6 +13,7 @@ Create
 Enter
 Rename
 Kick
+Send //TODO revisar jm
 */
 
 public class NCNameMessage extends NCMessage {

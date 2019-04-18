@@ -62,22 +62,32 @@ public abstract class NCMessage {
 			NCMessageOp op = operationToOpcode(value);
 
 			switch (op) {
-			case INVALID_CODE:
+			case INVALID_CODE: //case INVALID_CODE: //TODO consider if null or wtf 
 				return null;
+			//case INFO: //TODO
+			//case UPLOAD: // TODO
+			//case NEW_FILE: //TODO
 			case REGISTER:
 			case CREATE:
+			case RENAME:
 			case ENTER:
+			case KICK:
+			case SEND:
 				return NCNameMessage.readFromString(op, message);
 			case ROOMS_INFO:
-				return NCInfoMessage.readFromString(op, message);
+				return NCInfoMessage.readFromString(op, message);	
+			case DM:
+			case NEW_MESSAGE:
+			case NEW_DM:
+				return NCTextMessage.readFromString(op, message);
 			// Control Messages
 			case ROOMS_LIST:
 			case EXIT:
-			//case INVALID_CODE: //TODO consider if null or wtf 
 			case OK:
 			case DENIED: 
 			case REPEATED:
 			case KICKED:
+			case QUIT: //TODO revisar jm
 				return new NCControlMessage(op);				
 			default:
 				System.err.println("Unknown message type received: " + op.getCode() + " " + op.getText());

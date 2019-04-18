@@ -11,6 +11,7 @@ import es.um.redes.nanoChat.messageFV.NCInfoMessage;
 import es.um.redes.nanoChat.messageFV.NCMessage;
 import es.um.redes.nanoChat.messageFV.NCMessageOp;
 import es.um.redes.nanoChat.messageFV.NCNameMessage;
+import es.um.redes.nanoChat.messageFV.NCTextMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 import es.um.redes.nanoChat.server.roomManager.NCRoomManager;
 
@@ -79,7 +80,6 @@ public class NCServerThread extends Thread {
 						processRoomMessages();
 					} else dos.writeUTF(new NCControlMessage(NCMessageOp.DENIED).toEncodedString());
 					break;
-				
 				default: // Si el mensaje no se encuentra entre los que se pueden enviar:
 					NCControlMessage answer = new NCControlMessage(NCMessageOp.INVALID_CODE);
 					dos.writeUTF(answer.toEncodedString());
@@ -125,7 +125,7 @@ public class NCServerThread extends Thread {
 		dos.writeUTF(answer.toEncodedString());
 	}
 
-	private void processRoomMessages()  {
+	private void processRoomMessages()  { //TODO acabar 
 		// Loop until the user exits this room
 		boolean exit = false;
 		while (!exit) {			
@@ -133,20 +133,34 @@ public class NCServerThread extends Thread {
 				// Read new message
 				NCMessage message = NCMessage.readMessageFromSocket(dis);
 				switch (message.getOp()) {
-				case SEND:
-					break;
 				case INFO:
 					break;
-					
+				//TODO revisar jm				
+				case SEND:
+					roomManager.broadcastMessage(user, ((NCNameMessage) message).getName()); 
+					break;			
+				case DM:
+					roomManager.sendMessage(user, ((NCTextMessage) message).getUser(), ((NCTextMessage) message).getText());
+					break;
+				case QUIT: //TODO no se si ejecutara lo de abajo antes de que haya ningun error de conexion
+							// Si lo hay habra que ver como, seguramente poner en catch lo mismo que en la
+							// situacion de arriba. Si se quita esto hay que borrar en NCMessagOP, NCControlMessage 
+							// NCMessage, NCConnector.disconnect
 				case EXIT:
+					serverManager.leaveRoom(user, currentRoom); 
+					roomManager = null;
+					currentRoom = null;
 					exit = true;
 					break;
-					
+				case KICK:
+				case UPLOAD:
+				//case RENAME: //TODO ver si vamos a cambiar el nombre desde dentro de la sala
+					break;
 				default:
 					break;
 				}
 			} catch (IOException e) {
-				// TODO Auto-generated catch block ver por qué se genera una excepción
+				// TODO ver por qué se genera una excepción
 				e.printStackTrace();
 			}
 		}
