@@ -3,11 +3,13 @@ package es.um.redes.nanoChat.client.application;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 
 import es.um.redes.nanoChat.client.comm.NCConnector;
 import es.um.redes.nanoChat.client.shell.NCCommands;
 import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
+import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
 import es.um.redes.nanoChat.messageFV.NCMessage;
 import es.um.redes.nanoChat.messageFV.NCMessageOp;
 import es.um.redes.nanoChat.messageFV.NCTextMessage;
@@ -76,7 +78,7 @@ public class NCController {
 	}
 
 	//Procesa los comandos introducidos por un usuario que aún no está dentro de una sala
-	public void processCommand() {
+	public void processCommand() throws InvalidFormat {
 		switch (currentCommand) {
 		case NICK:
 			if (clientStatus == PRE_REGISTRATION)
@@ -119,7 +121,7 @@ public class NCController {
 	}
 	
 	// Método para registrar el nick del usuario en el servidor de NanoChat
-	private void registerNickName() {
+	private void registerNickName() throws InvalidFormat { //TODO el server no debería mandar algo con formato incorrecto así que de alguna manera quitaremos esto (o haremos que no compruebe)
 		try {
 			// Pedimos que se registre el nick (se comprobará si está duplicado)
 			boolean registered = ncConnector.registerNickname(nickname); 
@@ -137,9 +139,9 @@ public class NCController {
 	}
 
 	//Método que solicita al servidor de NanoChat la lista de salas e imprime el resultado obtenido
-	private void getAndShowRooms() {
+	private void getAndShowRooms() throws InvalidFormat {
 		// Le pedimos al conector que obtenga la lista de salas ncConnector.getRooms()
-		ArrayList<NCRoomDescription> descriptions = ncConnector.getRooms(); //TODO check null
+		Collection<NCRoomDescription> descriptions = ncConnector.getRooms(); //TODO check null
 		// Una vez recibidas iteramos sobre la lista para imprimir información de cada sala
 		System.out.println("There are currently " + descriptions.size() + " rooms:");
 		for (NCRoomDescription des : descriptions) {
@@ -158,7 +160,7 @@ public class NCController {
 			
 			System.out.println("You created the room " + room + ". You are now inside.");
 			clientStatus = IN_ROOM;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			System.err.println("Something went wrong while creating a room"); //TODO especificar qué
 			e.printStackTrace();
 		}
@@ -184,7 +186,7 @@ public class NCController {
 			System.out.println("You entered the room.");
 			// Cambiamos el estado del autómata para aceptar nuevos comandos
 			clientStatus = IN_ROOM;
-		} catch (IOException e) {
+		} catch (Exception e) {
 			System.err.println("Something went wrong while entering a room");
 			e.printStackTrace();
 		}
@@ -216,7 +218,7 @@ public class NCController {
 		case EXIT:
 			//El usuario quiere salir de la sala
 			exitTheRoom();
-		}		
+		} //TODO default?
 	}
 
 	//Método para solicitar al servidor la información sobre una sala y para mostrarla por pantalla
@@ -255,14 +257,14 @@ public class NCController {
 		NCMessage message = ncConnector.receiveMessage();
 		//TODO En función del tipo de mensaje, actuar en consecuencia
 		switch(message.getOp()){
-			case NEW_DM:
-				System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
+			case NEW_DM: //TODO DM
+				//System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
 			//(Ejemplo) En el caso de que fuera un mensaje de chat de broadcast mostramos la información de quién envía el mensaje y el mensaje en sí
 			case NEW_MESSAGE:
-				System.out.println(((NCTextMessage)message).getUser()+": "+((NCTextMessage)message).getText());
+				System.out.println(((NCTextMessage)message).getUser()+": "+((NCTextMessage)message).getMessage()); //TODO Haz una conversión, no?
 			//case KICKED:
-			//case INFO: //TODO cual era el NCMessageOp que devolvia un INFO de la sala?
-		}
+			//case INFO: //TODO cual era el NCMessageOp que devolvia un INFO de la sala? -> ROOMS_LIST
+		} //TODO default?
 		
 	}
 

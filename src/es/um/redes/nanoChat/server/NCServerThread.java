@@ -6,12 +6,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 
-import es.um.redes.nanoChat.messageFV.NCControlMessage;
-import es.um.redes.nanoChat.messageFV.NCInfoMessage;
-import es.um.redes.nanoChat.messageFV.NCMessage;
-import es.um.redes.nanoChat.messageFV.NCMessageOp;
-import es.um.redes.nanoChat.messageFV.NCNameMessage;
-import es.um.redes.nanoChat.messageFV.NCTextMessage;
+import es.um.redes.nanoChat.messageFV.*;
+import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 import es.um.redes.nanoChat.server.roomManager.NCRoomManager;
 
@@ -39,6 +35,7 @@ public class NCServerThread extends Thread {
 		this.socket = socket;
 		this.serverManager = manager;
 	}
+	//TODO probablemente es más adecuado sustituir los getOp() -> cast por instanceOf, pero habrá que ver cómo manejamos los mensajes de control (clases separadas?) 
 
 	//Main loop
 	public void run() {
@@ -59,35 +56,37 @@ public class NCServerThread extends Thread {
 				
 				// Request to create a room
 				case CREATE:
-					String roomName = ((NCNameMessage) message).getName();
+					String roomName = ((NCCreateMessage) message).getRoomName();
 					roomManager = serverManager.createRoom(user, roomName, socket);
 					// If allowed, notify the client moved to the room and answered OK
 					if (roomManager != null) {
-						dos.writeUTF(new NCControlMessage(NCMessageOp.OK).toEncodedString());
+						dos.writeUTF(new NCControlMessage(NCMessageOp.OK).encode());
 						currentRoom = roomName;
 						processRoomMessages();
-					} else dos.writeUTF(new NCControlMessage(NCMessageOp.DENIED).toEncodedString());
+					} else dos.writeUTF(new NCControlMessage(NCMessageOp.DENIED).encode());
 					break;
 				
 				// Request to enter a room
 				case ENTER:
-					String room = ((NCNameMessage) message).getName();
+					String room = ((NCEnterMessage) message).getRoomName();
 					roomManager = serverManager.enterRoom(user, room, socket);
 					// If allowed, notify the client and start processing messages with processRoomMessages()
 					if (roomManager != null) {
-						dos.writeUTF(new NCControlMessage(NCMessageOp.OK).toEncodedString());
+						dos.writeUTF(new NCControlMessage(NCMessageOp.OK).encode());
 						currentRoom = room;
 						processRoomMessages();
-					} else dos.writeUTF(new NCControlMessage(NCMessageOp.DENIED).toEncodedString());
+					} else dos.writeUTF(new NCControlMessage(NCMessageOp.DENIED).encode());
 					break;
 				default: // Si el mensaje no se encuentra entre los que se pueden enviar:
 					NCControlMessage answer = new NCControlMessage(NCMessageOp.INVALID_CODE);
-					dos.writeUTF(answer.toEncodedString());
+					dos.writeUTF(answer.encode());
 				}
 			}
+		} catch (InvalidFormat e) {
+			System.out.println("* User " + user + " sent an invalid format message. Reason: " + e.getMessage());
 		} catch (Exception e) {
 			//If an error occurs with the communications the user is removed from all the managers and the connection is closed
-			System.out.println("* User "+ user + " disconnected.");
+			System.out.println("* User "+ user + " disconnected. " + e.getMessage());
 			serverManager.leaveRoom(user, currentRoom);
 			serverManager.removeUser(user);
 		}
@@ -102,30 +101,31 @@ public class NCServerThread extends Thread {
 	}
 
 	// Obtenemos el nick y solicitamos al ServerManager que verifique si está duplicado
-	private void receiveAndVerifyNickname() throws IOException {
+	//TODO hacer checkeo de formato inválido (probablemente en función aparte)
+	private void receiveAndVerifyNickname() throws IOException, InvalidFormat {
 		// La lógica de nuestro programa nos obliga a que haya un nick registrado antes de proseguir
 		// Extraer el nick del mensaje
-		NCNameMessage message = (NCNameMessage) NCMessage.readMessageFromSocket(dis); //TODO comprobar que es de este tipo
+		NCRegisterMessage message = (NCRegisterMessage) NCMessage.readMessageFromSocket(dis); //TODO comprobar que es de este tipo
 		// Entramos en un bucle hasta comprobar que alguno de los nicks proporcionados no está duplicado
 		// Validar el nick utilizando el ServerManager - addUser()
 		while (!serverManager.addUser(message.getName())) {
-			dos.writeUTF(new NCControlMessage(NCMessageOp.REPEATED).toEncodedString());
-			message = (NCNameMessage) NCMessage.readMessageFromSocket(dis); //TODO comprobar que es de este tipo
+			dos.writeUTF(new NCControlMessage(NCMessageOp.REPEATED).encode());
+			message = (NCRegisterMessage) NCMessage.readMessageFromSocket(dis); //TODO comprobar que es de este tipo
 		};
 		// Contestar al cliente con el resultado (éxito o duplicado)
 		user = message.getName();
-		dos.writeUTF(new NCControlMessage(NCMessageOp.OK).toEncodedString());
+		dos.writeUTF(new NCControlMessage(NCMessageOp.OK).encode());
 	}
 
 	//Mandamos al cliente la lista de salas existentes
 	private void sendRoomList() throws IOException {
 		// La lista de salas debe obtenerse a partir del ServerManager y después enviarse mediante su mensaje correspondiente
 		ArrayList<NCRoomDescription> rooms = serverManager.getRoomList();
-		NCInfoMessage answer = new NCInfoMessage(NCMessageOp.ROOMS_INFO, rooms);
-		dos.writeUTF(answer.toEncodedString());
+		NCRoomListMessage answer = new NCRoomListMessage(rooms);
+		dos.writeUTF(answer.encode());
 	}
 
-	private void processRoomMessages()  { //TODO acabar 
+	private void processRoomMessages() throws InvalidFormat  { //TODO acabar //TODO quitar invalid format con metodo, as above 
 		// Loop until the user exits this room
 		boolean exit = false;
 		while (!exit) {			
@@ -137,10 +137,10 @@ public class NCServerThread extends Thread {
 					break;
 				//TODO revisar jm				
 				case SEND:
-					roomManager.broadcastMessage(user, ((NCNameMessage) message).getName()); 
+					roomManager.broadcastMessage(user, ((NCSendMessage) message).getText()); 
 					break;			
 				case DM:
-					roomManager.sendMessage(user, ((NCTextMessage) message).getUser(), ((NCTextMessage) message).getText());
+					//roomManager.sendMessage(user, ((NCTextMessage) message).getUser(), ((NCTextMessage) message).getText());
 					break;
 				case QUIT: //TODO no se si ejecutara lo de abajo antes de que haya ningun error de conexion
 							// Si lo hay habra que ver como, seguramente poner en catch lo mismo que en la
@@ -154,7 +154,7 @@ public class NCServerThread extends Thread {
 					break;
 				case KICK:
 				case UPLOAD:
-				//case RENAME: //TODO ver si vamos a cambiar el nombre desde dentro de la sala
+				//case RENAME: //TODO ver si vamos a cambiar el nombre desde dentro de la sala (Afirmativo)
 					break;
 				default:
 					break;

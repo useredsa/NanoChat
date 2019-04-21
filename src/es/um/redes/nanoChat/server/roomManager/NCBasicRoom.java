@@ -3,13 +3,9 @@ package es.um.redes.nanoChat.server.roomManager;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 
-import es.um.redes.nanoChat.messageFV.NCMessageOp;
 import es.um.redes.nanoChat.messageFV.NCTextMessage;
 
 public class NCBasicRoom extends NCRoomManager {
@@ -34,20 +30,19 @@ public class NCBasicRoom extends NCRoomManager {
 	}
 
 	@Override 
-	public void broadcastMessage(String u, String message) throws IOException {//TODO revisar jm
-		for(String e : users.keySet()) {
-			DataOutputStream dos = new DataOutputStream(users.get(e).getOutputStream());
-			dos.writeUTF(new NCTextMessage(NCMessageOp.NEW_MESSAGE,u,message).toEncodedString());
+	public void broadcastMessage(String u, String message) throws IOException {
+		for(String e : users.keySet()) { //TODO probablemente no debería enviarse el mensaje a la persona que lo envió (opino igual)
+			DataOutputStream dos = new DataOutputStream(users.get(e).getOutputStream()); //TODO preguntar oscar (concurrencia?)
+			dos.writeUTF(new NCTextMessage(u,message).encode());
 		}
-		Date last = new Date();
-		timeLastMessage = last.getTime();
+		timeLastMessage = new Date().getTime();
 	}
 	
 	@Override
 	public void sendMessage(String u, String v, String message) throws IOException{//TODO revisar jm
 		if(users.containsKey(v)) {
-			DataOutputStream dos = new DataOutputStream(users.get(v).getOutputStream());
-			dos.writeUTF(new NCTextMessage(NCMessageOp.NEW_DM, u, message).toEncodedString());
+			//DataOutputStream dos = new DataOutputStream(users.get(v).getOutputStream());
+			//dos.writeUTF(new NCTextMessage(u, message).encode()); //TODO con mensaje DM
 		}
 	}
 	
@@ -57,14 +52,13 @@ public class NCBasicRoom extends NCRoomManager {
 	}
 
 	@Override
-	public void setRoomName(String roomName) {// TODO revisar jm
+	public void setRoomName(String roomName) { // TODO revisar jm
 		this.roomName = roomName;
 	}
 
 	@Override
 	public NCRoomDescription getDescription() {
-		ArrayList<String> usersArray = new ArrayList<String> (users.keySet()); //TODO considerar hacer array
-		return new NCRoomDescription(roomName, usersArray, timeLastMessage);
+		return new NCRoomDescription(roomName, users.keySet(), timeLastMessage);
 	}
 
 	@Override

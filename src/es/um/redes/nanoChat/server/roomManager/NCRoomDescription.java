@@ -1,20 +1,18 @@
 package es.um.redes.nanoChat.server.roomManager;
 
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 
 public class NCRoomDescription {
 	//Campos de los que, al menos, se compone una descripción de una sala 
-	public String roomName;
-	public ArrayList<String> members;
+	//TODO make private
+	public String name;
+	public Collection<String> members;
 	public long timeLastMessage;
 	
 	//Constructor a partir de los valores para los campos
-	public NCRoomDescription(String roomName, ArrayList<String> members, long timeLastMessage) {
-		this.roomName = roomName;
+	public NCRoomDescription(String name, Collection<String> members, long timeLastMessage) {
+		this.name = name;
 		this.members = members;
 		this.timeLastMessage = timeLastMessage;
 	}
@@ -22,7 +20,7 @@ public class NCRoomDescription {
 	//Método que devuelve una representación de la Descripción lista para ser impresa por pantalla
 	public String toPrintableString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("Room Name: "+roomName+"\t Members ("+members.size()+ ") : ");
+		sb.append("Room Name: "+ name + "\t Members (" + members.size() + ") : ");
 		for (String member: members) {
 			sb.append(member+" ");
 		}

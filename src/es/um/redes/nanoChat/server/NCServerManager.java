@@ -95,13 +95,7 @@ class NCServerManager {
 		//TODO revisar jm
 		if(rooms.containsKey(room)) {
 			// Si la sala existe sacamos al usuario de la sala
-			rooms.get(room).removeUser(u);
-			//TODO Decidir qué hacer si la sala se queda vacía ¿OH MAMMA QUE HACHEMOS AQUI?(me gustaria que lo hablasemos) TEMPORAL
-			if(rooms.get(room).usersInRoom() == 0) {
-				rooms.remove(room);
-				System.out.println("* The room "+room+" was deleted");
-			}
-				
+			rooms.get(room).removeUser(u);			
 				
 		}	
 	}

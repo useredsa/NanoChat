@@ -1,6 +1,6 @@
 package es.um.redes.nanoChat.client.application;
 
-import java.io.IOException;
+import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
 
 public class NanoChat {
 
@@ -23,7 +23,12 @@ public class NanoChat {
 				// hasta que el usuario quiera salir de la aplicación.
 				do {
 					controller.readGeneralCommandFromShell();
-					controller.processCommand();
+					try {
+						controller.processCommand();
+					} catch (InvalidFormat e) {
+						System.err.println("contra todo pronóstico; sí, tenemos un invalid format.\n" + e.getMessage());
+						e.printStackTrace();
+					}
 				} while (controller.shouldQuit() == false);
 			}
 			else
