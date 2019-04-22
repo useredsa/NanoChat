@@ -32,8 +32,10 @@ public class NCBasicRoom extends NCRoomManager {
 	@Override 
 	public void broadcastMessage(String u, String message) throws IOException {
 		for(String e : users.keySet()) { //TODO probablemente no debería enviarse el mensaje a la persona que lo envió (opino igual)
-			DataOutputStream dos = new DataOutputStream(users.get(e).getOutputStream()); //TODO preguntar oscar (concurrencia?)
-			dos.writeUTF(new NCTextMessage(u,message).encode());
+			if (!e.equals(u)) {
+				DataOutputStream dos = new DataOutputStream(users.get(e).getOutputStream()); //TODO preguntar oscar (concurrencia?)
+				dos.writeUTF(new NCTextMessage(u,message).encode());
+			}
 		}
 		timeLastMessage = new Date().getTime();
 	}

@@ -180,7 +180,7 @@ public class NCController {
 				return;
 			}
 			// Si la respuesta es un rechazo entonces informamos al usuario
-			System.out.println("You cannot enter this room"); //TODO consider put smt if banned?
+			System.out.println("The room doesn't exist or you cannot enter that room"); //TODO consider put smt if banned?
 		} catch (IOException e) {
 			System.err.println("* There was an error entering the room");
 			e.printStackTrace();
