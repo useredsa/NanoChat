@@ -71,10 +71,12 @@ public class NCShell {
 				//Mostramos la ayuda
 				NCCommands.printCommandsHelp();
 				continue;
+				
+			//Estos comandos son válidos sin parámetros
 			case QUIT:
 			case ROOMLIST:
-				//Estos comandos son válidos sin parámetros
 				break;
+
 			case CREATE:
 			case ENTER:
 			case NICK:
@@ -146,7 +148,7 @@ public class NCShell {
 			case HELP:
 				NCCommands.printCommandsHelp();
 				continue;
-			case ROOMINFO:
+			case INFO:
 				break;
 			case EXIT:
 				break;

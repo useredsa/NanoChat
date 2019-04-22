@@ -23,6 +23,7 @@ public enum NCMessageOp {
 	DENIED((byte) 103, "Denied"), 
 	REPEATED((byte) 101, "Duplicated"),
 	ROOMS_LIST((byte) 98, "Rooms List"),
+	ROOM_INFO((byte) 74, "Room info"),
 	KICKED((byte) 107, "YOU GOT RICKROLLED"), 
 	NEW_MESSAGE((byte) 104, "New text message"), 
 	NEW_DM((byte) 105, "New DM"), 

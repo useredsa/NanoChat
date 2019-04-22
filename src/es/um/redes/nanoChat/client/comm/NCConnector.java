@@ -131,12 +131,15 @@ public class NCConnector {
 	}
 	
 	//Método para pedir la descripción de una sala
-	public NCRoomDescription getRoomInfo(String room) throws IOException {
+	public NCRoomDescription getRoomInfo() throws IOException, InvalidFormat {
 		//Funcionamiento resumido: SND(GET_ROOMINFO) and RCV(ROOMINFO)
 		//TODO Construimos el mensaje de solicitud de información de la sala específica
+		NCControlMessage request = new NCControlMessage(NCMessageOp.INFO);
+		dos.writeUTF(request.encode());
 		//TODO Recibimos el mensaje de respuesta
+		NCMessage answer = NCMessage.readMessageFromSocket(dis);
 		//TODO Devolvemos la descripción contenida en el mensaje
-		return null;
+		return ((NCRoomInfoMessage) answer).getRoomDescription();
 	}
 	
 	//Método para cerrar la comunicación con la sala

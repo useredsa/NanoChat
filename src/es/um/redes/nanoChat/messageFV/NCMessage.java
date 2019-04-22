@@ -35,6 +35,8 @@ public interface NCMessage {
 			return NCRegisterMessage.decode(dec);
 		//case RENAME: //TODO
 			
+		case ROOM_INFO:
+			return NCRoomInfoMessage.decode(dec);
 		case ROOMS_LIST:
 			return NCRoomListMessage.decode(dec);
 		case SEND:

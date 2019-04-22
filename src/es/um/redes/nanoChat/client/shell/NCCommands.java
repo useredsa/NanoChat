@@ -9,7 +9,7 @@ public enum NCCommands {
 	NICK		("nick",	"to set the <nickname> in the server"),
 	SEND		("send",	"to send a <message> in the chat"),
 	EXIT		("exit",	"to leave the current room"),
-	ROOMINFO	("info",	"shows the information of the room"),
+	INFO		("info",	"shows the information of the room"),
 	QUIT		("quit",	"to quit the application"),
 	HELP		("help",	"shows this information");
 	
@@ -19,7 +19,7 @@ public enum NCCommands {
 	
 	private final String name;			// Command name
 	private final String helpMessage;	// Command help message shown with the help command
-										// Value NON_USER not to display
+										// NON_USER means not to display
 	
 	private NCCommands (String name, String message) {
 		this.name = name;

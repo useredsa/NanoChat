@@ -134,9 +134,10 @@ public class NCServerThread extends Thread {
 				NCMessage message = NCMessage.readMessageFromSocket(dis);
 				switch (message.getOp()) {
 				case INFO:
+					NCRoomInfoMessage infoMessage = new NCRoomInfoMessage(roomManager.getDescription());
+					dos.writeUTF(infoMessage.encode());
 					break;
-				//TODO revisar jm				
-				case SEND:
+				case SEND: //TODO revisar jm
 					roomManager.broadcastMessage(user, ((NCSendMessage) message).getText()); 
 					break;			
 				case DM:

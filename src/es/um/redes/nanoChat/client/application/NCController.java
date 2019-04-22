@@ -168,7 +168,16 @@ public class NCController {
 		//TODO copiado de abajo, refactorizar
 		do {
 			readRoomCommandFromShell();
-			processRoomCommand();
+			try {
+				processRoomCommand();
+			} catch (IOException e) {
+				System.err.println("Connection problem");
+				e.printStackTrace();
+			} catch (InvalidFormat e) {
+				//TODO remove
+				System.err.println("Although unexpected, it did happen. " + e.getMessage());
+				e.printStackTrace();
+			}
 		} while (currentCommand != NCCommands.EXIT);
 	}
 
@@ -194,14 +203,23 @@ public class NCController {
 		do {
 			//Pasamos a aceptar sólo los comandos que son válidos dentro de una sala
 			readRoomCommandFromShell();
-			processRoomCommand();
+			try {
+				processRoomCommand();
+			} catch (IOException e) {
+				System.err.println("Connection problem");
+				e.printStackTrace();
+			} catch (InvalidFormat e) {
+				//TODO remove
+				System.err.println("Although unexpected, it did happen. " + e.getMessage());
+				e.printStackTrace();
+			}
 		} while (currentCommand != NCCommands.EXIT);
 	}
 
 	//Método para procesar los comandos específicos de una sala
-	private void processRoomCommand() {
+	private void processRoomCommand() throws IOException, InvalidFormat {
 		switch (currentCommand) {
-		case ROOMINFO:
+		case INFO:
 			//El usuario ha solicitado información sobre la sala y llamamos al método que la obtendrá
 			getAndShowInfo();
 			break;
@@ -222,9 +240,11 @@ public class NCController {
 	}
 
 	//Método para solicitar al servidor la información sobre una sala y para mostrarla por pantalla
-	private void getAndShowInfo() {
-		//TODO Pedimos al servidor información sobre la sala en concreto
-		//TODO Mostramos por pantalla la información
+	private void getAndShowInfo() throws IOException, InvalidFormat {
+		// Pedimos al servidor información sobre la sala en concreto
+		NCRoomDescription des = ncConnector.getRoomInfo();
+		// Mostramos por pantalla la información
+		System.out.println(des.toPrintableString());
 	}
 
 	//Método para notificar al servidor que salimos de la sala
