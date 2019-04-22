@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.Collections;
 
 import es.um.redes.nanoChat.messageFV.*;
 import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
@@ -26,77 +27,80 @@ public class NCConnector {
 		dis = new DataInputStream(socket.getInputStream());
 	}
 
-	//TODO esto para que era?
-	// Método para registrar el nick en el servidor. Nos informa sobre si la inscripción se hizo con éxito o no.
-	public boolean registerNickname_UnformattedMessage(String nick) throws IOException {
-		// Funcionamiento resumido: SEND(nick) and RCV(NICK_OK) or RCV(NICK_DUPLICATED)
-		// Enviamos una cadena con el nick por el flujo de salida
-		dos.writeUTF(nick);
-		// Leemos la cadena recibida como respuesta por el flujo de entrada
-		String answer = dis.readUTF();
-		// Si la cadena recibida es NICK_OK entonces no está duplicado (en función de ello modificar el return)
-		return answer.equals("NICK_OK");
-	}
-
-	/* Aclaración:
+	/* Aclaración: //TODO
 	 * Los métodos son todos prácticamente iguales. Por simplicidad
 	 * comentamos qué hace el código del primero.
 	 */
 	
 	// Método para registrar el nick en el servidor. Nos informa sobre si la inscripción se hizo con éxito o no.
-	public boolean registerNickname(String nick) throws IOException, InvalidFormat {
+	public boolean registerNickname(String nick) throws IOException {
 		//Funcionamiento resumido: SEND(nick) and RCV(NICK_OK) or RCV(NICK_DUPLICATED)
 		//Creamos un mensaje de tipo RoomMessage con opcode OP_NICK en el que se inserte el nick
 		NCRegisterMessage message = new NCRegisterMessage(nick);
 		// Escribimos el mensaje parseado en el flujo de salida, es decir, provocamos que se envíe por la conexión TCP
 		dos.writeUTF(message.encode());
 		// Leemos el mensaje recibido como respuesta por el flujo de entrada
-		NCMessage answer = NCMessage.readMessageFromSocket(dis);
-		// Analizamos el mensaje para saber si está duplicado el nick (modificar el return en consecuencia)
-		return answer.getOp() == NCMessageOp.OK;			
+		try {
+			NCMessage answer = NCMessage.readMessageFromSocket(dis);
+			// Analizamos el mensaje para saber si está duplicado el nick (modificar el return en consecuencia)
+			return answer.getOp() == NCMessageOp.OK;			
+		} catch (InvalidFormat e) {
+			// The server is not gonna send a message with an invalid format
+			e.printStackTrace();
+			return false;
+		}
 	}
 	
 	//Método para obtener la lista de salas del servidor
-	public Collection<NCRoomDescription> getRooms() throws InvalidFormat {
+	public Collection<NCRoomDescription> getRooms() {
 		//Funcionamiento resumido: SND(GET_ROOMS) and RCV(ROOM_LIST)
 		NCControlMessage message = new NCControlMessage(NCMessageOp.ROOMS_LIST);
 		try {	//TODO ejemplo de manejo de errores, probablemente no se haga en el usuario, pero lo de implosions mola
 			dos.writeUTF(message.encode());
 			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			if (answer.getOp() != NCMessageOp.ROOMS_LIST) {
-				// Manejo de errores
-				System.err.println("I expected room_list but received implosion");
-				return null;
-			}
 			return ((NCRoomListMessage) answer).getRoomsInfo();
 		} catch (IOException e) {
-			System.err.println("Problems writting or receiving a message. Got Exception: " + e);
+			System.err.println("Problems writting or receiving a message.");
 			e.printStackTrace();
+			return Collections.emptyList();
+		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+			e.printStackTrace();
+			return null;
 		}
-		return null;
 	}
 	
 	// Asks to create a room. If successful, automatically enters the room.
-	public boolean createRoom(String name) throws IOException, InvalidFormat {
+	public boolean createRoom(String name) throws IOException {
 		NCCreateMessage mess = new NCCreateMessage(name);
 		dos.writeUTF(mess.encode());
-		NCMessage answer = NCMessage.readMessageFromSocket(dis);
-		return answer.getOp() == NCMessageOp.OK;
+		try {
+			NCMessage answer = NCMessage.readMessageFromSocket(dis);
+			return answer.getOp() == NCMessageOp.OK;
+		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+			e.printStackTrace();
+			return false;
+		}
 	}
 	
 	// Método para solicitar la entrada en una sala
-	public boolean enterRoom(String room) throws IOException, InvalidFormat {
+	public boolean enterRoom(String room) throws IOException {
 		// Funcionamiento resumido: SND(ENTER_ROOM<room>) and RCV(IN_ROOM) or RCV(REJECT)
 		NCEnterMessage message = new NCEnterMessage(room);
 		dos.writeUTF(message.encode());
-		NCMessage answer = NCMessage.readMessageFromSocket(dis);
-		return answer.getOp() == NCMessageOp.OK;
+		try {
+			NCMessage answer = NCMessage.readMessageFromSocket(dis);
+			return answer.getOp() == NCMessageOp.OK;
+		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+			e.printStackTrace();
+			return false;
+		}
 	}
 	
 	//Método para salir de una sala
 	public void leaveRoom() throws IOException {
 		//Funcionamiento resumido: SND(EXIT_ROOM)
-		dos.writeUTF(new NCControlMessage(NCMessageOp.EXIT).encode());
+		NCControlMessage exitMess = new NCControlMessage(NCMessageOp.EXIT); 
+		dos.writeUTF(exitMess.encode());
 	}
 	
 	//Método que utiliza el Shell para ver si hay datos en el flujo de entrada
@@ -114,41 +118,44 @@ public class NCConnector {
 	}
 	//Metodo para mandar un mensaje a toda la sala de chat
 	public void sendBroadcastMessage(String text) throws IOException{ //TODO me gusta la palabra broadcast o roomMessage, probablemente cambie el send
-		dos.writeUTF(new NCSendMessage(text).encode());
+		NCSendMessage mess = new NCSendMessage(text); 
+		dos.writeUTF(mess.encode());
 	}
+	
 	//Metodo para recibir mensajes de chat de una sala
-	public NCMessage receiveMessage() { 
+	public NCMessage receiveMessage() throws IOException { 
 		try {
-			NCMessage message = NCMessage.readMessageFromSocket(dis);
-			return message;
-		} catch (Exception e) {
-			// TODO revisar
-			System.err.println("* There's been a problem while receiving messages");
+			return NCMessage.readMessageFromSocket(dis);
+		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format 
 			e.printStackTrace();
-			return null;
+			return null; //TODO ver si cambiar
 		}
-		
 	}
 	
 	//Método para pedir la descripción de una sala
-	public NCRoomDescription getRoomInfo() throws IOException, InvalidFormat {
+	public NCRoomDescription getRoomInfo() throws IOException {
 		//Funcionamiento resumido: SND(GET_ROOMINFO) and RCV(ROOMINFO)
 		//TODO Construimos el mensaje de solicitud de información de la sala específica
 		NCControlMessage request = new NCControlMessage(NCMessageOp.INFO);
 		dos.writeUTF(request.encode());
 		//TODO Recibimos el mensaje de respuesta
-		NCMessage answer = NCMessage.readMessageFromSocket(dis);
-		//TODO Devolvemos la descripción contenida en el mensaje
-		return ((NCRoomInfoMessage) answer).getRoomDescription();
+		try {
+			NCMessage answer = NCMessage.readMessageFromSocket(dis);
+			//TODO Devolvemos la descripción contenida en el mensaje
+			return ((NCRoomInfoMessage) answer).getRoomDescription();
+		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+			e.printStackTrace();
+			return null; //TODO I dnt like it
+		}
 	}
 	
-	//Método para cerrar la comunicación con la sala
-	//TODO (Opcional) Enviar un mensaje de salida del servidor de Chat
+	// Método para cerrar la comunicación con la sala
+	// (Opcional) Enviar un mensaje de salida del servidor de Chat
 	public void disconnect() {
-		try {// TODO revisar jm
+		try {
 			dos.writeUTF(new NCControlMessage(NCMessageOp.QUIT).encode());
 		} catch (IOException e1) {
-			System.out.println("* There was an error while you were being deleted from the server");
+			System.out.println("* There was an error disconnecting from the server");
 			e1.printStackTrace();
 		}
 		try {
@@ -157,7 +164,7 @@ public class NCConnector {
 			}
 		} catch (IOException e) {
 		} finally {
-			socket = null;
+			socket = null; //TODO no tengo muy claro que esto sea lo que haya que hacer 
 		}
 	}
 

@@ -3,20 +3,21 @@ package es.um.redes.nanoChat.client.shell;
 public enum NCCommands {
 	SOCKET_IN	(NCCommands.NON_USER, NCCommands.NON_USER),
 	INVALID		(NCCommands.NON_USER, NCCommands.NON_USER),
-	ROOMLIST	("roomlist","provides a list of available rooms to chat"),
-	CREATE		("create",	"create a new <room>"),
-	ENTER		("enter", 	"enter a particular <room>"),
 	NICK		("nick",	"to set the <nickname> in the server"),
-	SEND		("send",	"to send a <message> in the chat"),
+	ROOMLIST	("roomlist","provides a list of available rooms to chat"),
+	ENTER		("enter", 	"enter a particular <room>"),
 	EXIT		("exit",	"to leave the current room"),
+	CREATE		("create",	"create a new <room>"),
+	RENAME		("rename",	"changes the name of a <room> to <name>"),
+	SEND		("send",	"to send a <message> in the chat"),
+	DM			("dm",		"to send <user> a <message>"),
 	INFO		("info",	"shows the information of the room"),
+	KICK		("kick",	"kicks out the <user> from the room"),
 	QUIT		("quit",	"to quit the application"),
 	HELP		("help",	"shows this information");
 	
 	
 	private static final String NON_USER = "NON-USER";
-	
-	
 	private final String name;			// Command name
 	private final String helpMessage;	// Command help message shown with the help command
 										// NON_USER means not to display
@@ -37,7 +38,7 @@ public enum NCCommands {
 	}
 
 	// Prints list of valid commands and the help message of each one.
-	public static void printCommandsHelp() {
+	public static void printCommandsHelp() {	//TODO poner mejor, de forma que se entiendan, sobre todo los que llevan dos campos y eso
 		System.out.println("List of commands:");
 		for (NCCommands comm : NCCommands.values())
 			if (!comm.helpMessage.equals(NON_USER))

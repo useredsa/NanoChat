@@ -155,7 +155,7 @@ public class NCShell {
 			case SEND:
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
-					message.append(st.nextToken()+" "); 
+					message.append(st.nextToken()+" "); //TODO menuda patata Óscar >.<
 				}
 				vargs.add(message.toString());
 				break;
@@ -178,6 +178,7 @@ public class NCShell {
 			if (args.length == 0 || args.length > 1) {
 				System.out.println("Correct use: " + command.getName() + " <room>");
 			}
+			break;
 		//enter requiere el parámetro <room>
 		case ENTER:
 			if (args.length == 0 || args.length > 1) {
