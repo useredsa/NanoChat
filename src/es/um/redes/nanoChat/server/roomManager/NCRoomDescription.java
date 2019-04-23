@@ -1,10 +1,12 @@
 package es.um.redes.nanoChat.server.roomManager;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 
 public class NCRoomDescription {
-	//Campos de los que, al menos, se compone una descripción de una sala 
+	//Campos de los que, al menos, se compone una descripción de una sala
+	private static final NCRoomDescription INVALID_DESCRIPTION = new NCRoomDescription("ERROR", Collections.emptyList(), 0);
 	//TODO make private
 	public String name;
 	public Collection<String> members;
@@ -29,5 +31,9 @@ public class NCRoomDescription {
 		else 
 			sb.append("\tLast message: not yet");
 		return sb.toString();
+	}
+	
+	public static NCRoomDescription invalidDescription() {
+		return INVALID_DESCRIPTION;
 	}
 }

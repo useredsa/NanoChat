@@ -1,8 +1,6 @@
-package es.um.redes.nanoChat.messageFV.encoding;
+package es.um.redes.nanoChat.messageFV;
 
 import java.util.Collection;
-
-import es.um.redes.nanoChat.messageFV.NCMessageOp;
 
 public final class NCMessageEncoder implements IFieldEncoder {
 	private static final char DELIMITER = ':';    //Define el delimitador
@@ -11,11 +9,11 @@ public final class NCMessageEncoder implements IFieldEncoder {
 	private static final String OPCODE_FIELD = "Operation";
 	private final StringBuffer sb = new StringBuffer();
 	
-	private NCMessageEncoder(NCMessageOp op) {
+	private NCMessageEncoder(NCMessageType op) {
 		sb.append(OPCODE_FIELD + DELIMITER + op.getText() + END_LINE);
 	}
 	
-	public static IFieldEncoder ofType(NCMessageOp op) {
+	public static IFieldEncoder ofType(NCMessageType op) {
 		return new NCMessageEncoder(op);
 	}
 	
@@ -38,6 +36,7 @@ public final class NCMessageEncoder implements IFieldEncoder {
 		return this;
 	}
 	
+	@Override
 	public String toString() {
 		sb.append(END_LINE);
 		return sb.toString();

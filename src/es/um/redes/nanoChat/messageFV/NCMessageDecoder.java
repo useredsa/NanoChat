@@ -1,6 +1,4 @@
-package es.um.redes.nanoChat.messageFV.encoding;
-
-import es.um.redes.nanoChat.messageFV.NCMessageOp;
+package es.um.redes.nanoChat.messageFV;
 
 public class NCMessageDecoder {
 	private static final char DELIMITER = ':';    //Define el delimitador
@@ -9,16 +7,16 @@ public class NCMessageDecoder {
 	private static final String OPCODE_FIELD = "Operation";
 	private int currentLine;
 	private final String[] messageLines;
-	private final NCMessageOp op;
+	private final NCMessageType op;
 	
 	public NCMessageDecoder(String message) throws InvalidFormat {
 		assert message != null;
 		currentLine = 0;
-		messageLines = message.trim().split(System.getProperty("line.separator"), -1);
+		messageLines = message.split(String.valueOf(END_LINE), -1);		// Literal split, doesn't remove empty occ.
 		if (messageLines.length == 0)
 			throw new InvalidFormat("This message is empty");
 		String operationText = decodeField(OPCODE_FIELD);
-		op = NCMessageOp.fromString(operationText);
+		op = NCMessageType.fromString(operationText);
 	}
 	
 	public String decodeField(String fieldName) throws InvalidFormat {
@@ -51,10 +49,10 @@ public class NCMessageDecoder {
 	}
 	
 	public boolean hasEnded() {
-		return currentLine == messageLines.length;
+		return currentLine+2 == messageLines.length && messageLines[currentLine].equals("") && messageLines[currentLine+1].equals("");
 	}
 	
-	public NCMessageOp getMessageOp() {
+	public NCMessageType getMessageOp() {
 		return op;
 	}
 	

@@ -1,15 +1,16 @@
-package es.um.redes.nanoChat.messageFV;
+package es.um.redes.nanoChat.messageFV.messages;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageDecoder;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageEncoder;
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.NCMessageDecoder;
+import es.um.redes.nanoChat.messageFV.NCMessageEncoder;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
 public class NCRoomInfoMessage implements NCMessage {
-	static private final NCMessageOp MESSAGE_OP = NCMessageOp.ROOM_INFO;
+	static private final NCMessageType MESSAGE_OP = NCMessageType.ROOM_INFO;
 	static private final String ROOMS_FIELD = "Room";
 	static private final String USERS_FIELD = "Users";
 	static private final String LAST_MESSAGE_FIELD = "Last Message";
@@ -20,7 +21,7 @@ public class NCRoomInfoMessage implements NCMessage {
 	}
 
 	@Override
-	public NCMessageOp getOp() {
+	public NCMessageType getType() {
 		return MESSAGE_OP;
 	}
 

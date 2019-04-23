@@ -5,67 +5,94 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 
-import es.um.redes.nanoChat.messageFV.NCTextMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
 
-public class NCBasicRoom extends NCRoomManager {
-	private final HashMap<String, Socket> users;
+public class NCBasicRoom implements NCRoomManager {
+	private String roomName;
+	private final String creator;
+	private final HashSet<String> admins;
+	private final HashMap<String, Socket> members;
 	private long timeLastMessage = 0; //TODO variable que sacaremos de la lista de mensajes
-	
-	public NCBasicRoom(String name) {
-		roomName = name;
-		users = new HashMap<String, Socket>();
-	}
 	
 	public NCBasicRoom(String name, String creator, Socket s) {
 		roomName = name;
-		users = new HashMap<String, Socket>();
+		this.creator = creator;
+		admins = new HashSet<String>();
+		members = new HashMap<String, Socket>();
 		registerUser(creator, s);
 	}
 
 	@Override
 	public boolean registerUser(String u, Socket s) {
-		users.put(u, s); //TODO manejar duplicados?
+		if (members.containsKey(u)) return false;
+		members.put(u, s);
 		return true;
+	}
+	
+	@Override
+	public void removeUser(String u) {
+		members.remove(u);
 	}
 
 	@Override 
 	public void broadcastMessage(String u, String message) throws IOException {
-		for(String e : users.keySet()) { //TODO probablemente no debería enviarse el mensaje a la persona que lo envió (opino igual)
+		for(String e : members.keySet()) {
 			if (!e.equals(u)) {
-				DataOutputStream dos = new DataOutputStream(users.get(e).getOutputStream()); //TODO preguntar oscar (concurrencia?)
+				DataOutputStream dos = new DataOutputStream(members.get(e).getOutputStream()); //TODO preguntar oscar (concurrencia?)
 				dos.writeUTF(new NCTextMessage(u,message).encode());
 			}
 		}
 		timeLastMessage = new Date().getTime();
 	}
 	
-	@Override
-	public void sendMessage(String u, String v, String message) throws IOException{//TODO revisar jm
-		if(users.containsKey(v)) {
-			//DataOutputStream dos = new DataOutputStream(users.get(v).getOutputStream());
-			//dos.writeUTF(new NCTextMessage(u, message).encode()); //TODO con mensaje DM
-		}
-	}
-	
-	@Override
-	public void removeUser(String u) { //TODO revisar jm
-		users.remove(u);
+	private boolean hasRights(String user)  {
+		return creator.equals(user) || admins.contains(user);
 	}
 
 	@Override
-	public void setRoomName(String roomName) { // TODO revisar jm
-		this.roomName = roomName;
+	public int rename(String user, String newName) {
+		if (hasRights(user)) {
+			this.roomName = newName;
+			return 0; // The operation was successful
+		} else return 2; // The user has no rights
+	}
+	
+	@Override
+	public int promote(String user, String promoted) {
+		if (hasRights(user)) {
+			if (!hasRights(promoted)) {
+				admins.add(promoted);
+				return 0; // The operation was successful
+			} else return 3; // The target already has rights
+		} else return 2; // The user has no rights
+	}
+	
+	@Override
+	public int kick(String user, String kicked) {
+		if (hasRights(user) && !hasRights(kicked)) {
+			if (!hasRights(kicked)) {
+				if (members.containsKey(kicked)) {
+					//TODO remover de la sala, notificar a su thread, etc
+					return 0; // The operation was successful
+				} else return 4; // The target is not in the room
+			} else return 3; // The target cannot be kicked
+		} else return 2; // The user has no rights
 	}
 
 	@Override
 	public NCRoomDescription getDescription() {
-		return new NCRoomDescription(roomName, users.keySet(), timeLastMessage);
+		return new NCRoomDescription(roomName, members.keySet(), timeLastMessage);
 	}
 
 	@Override
 	public int usersInRoom() {
-		return users.size();
+		return members.size();
 	}
 
+	@Override
+	public String getRoomName() {
+		return roomName;
+	}
 }

@@ -1,11 +1,12 @@
-package es.um.redes.nanoChat.messageFV;
+package es.um.redes.nanoChat.messageFV.messages;
 
-import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageDecoder;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageEncoder;
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.NCMessageDecoder;
+import es.um.redes.nanoChat.messageFV.NCMessageEncoder;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
 
 public class NCSendMessage implements NCMessage {
-	static private final NCMessageOp MESSAGE_OP = NCMessageOp.SEND;
+	static private final NCMessageType MESSAGE_OP = NCMessageType.SEND;
 	static private final String FIELD_NAME = "Text";
 	private final String text;
 	
@@ -14,7 +15,7 @@ public class NCSendMessage implements NCMessage {
 	}
 	
 	@Override
-	public NCMessageOp getOp() {
+	public NCMessageType getType() {
 		return MESSAGE_OP;
 	}
 	

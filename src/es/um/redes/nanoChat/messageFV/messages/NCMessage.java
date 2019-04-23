@@ -1,10 +1,11 @@
-package es.um.redes.nanoChat.messageFV;
+package es.um.redes.nanoChat.messageFV.messages;
 
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageDecoder;
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.NCMessageDecoder;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
 
 
 public interface NCMessage {
@@ -13,7 +14,7 @@ public interface NCMessage {
 	public static NCMessage readMessageFromSocket(DataInputStream dis) throws IOException, InvalidFormat {
 		String message = dis.readUTF();
 		NCMessageDecoder dec = new NCMessageDecoder(message);
-		NCMessageOp op = dec.getMessageOp();
+		NCMessageType op = dec.getMessageOp();
 		switch (op) {
 		case CREATE:
 			return NCCreateMessage.decode(dec);
@@ -33,8 +34,8 @@ public interface NCMessage {
 			return NCTextMessage.decode(dec);
 		case REGISTER:
 			return NCRegisterMessage.decode(dec);
-		//case RENAME: //TODO
-			
+		case RENAME:
+			return NCRenameMessage.decode(dec);
 		case ROOM_INFO:
 			return NCRoomInfoMessage.decode(dec);
 		case ROOMS_LIST:
@@ -43,13 +44,14 @@ public interface NCMessage {
 			return NCSendMessage.decode(dec);
 		//case UPLOAD: //TODO
 			
+		case OK:
 		case DENIED:
+		case IMPOSSIBLE:
+		case REPEATED:
 		case EXIT:
 		case INFO:
 		case KICKED:
-		case OK:
 		case QUIT:
-		case REPEATED:
 		case LIST_ROOMS:
 			return new NCControlMessage(op);
 		default:
@@ -59,7 +61,7 @@ public interface NCMessage {
 	}
 	
 	// Devuelve el opcode del mensaje
-	public abstract NCMessageOp getOp();
+	public abstract NCMessageType getType();
 	
 	// Método que debe ser implementado específicamente por cada subclase de NCMessage
 	public abstract String encode();

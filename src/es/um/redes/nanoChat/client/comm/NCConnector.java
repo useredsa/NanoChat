@@ -10,7 +10,15 @@ import java.util.Collection;
 import java.util.Collections;
 
 import es.um.redes.nanoChat.messageFV.*;
-import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCCreateMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCEnterMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCRegisterMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCRenameMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCRoomInfoMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCRoomListMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCSendMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
 //Esta clase proporciona la funcionalidad necesaria para intercambiar mensajes entre el cliente y el servidor de NanoChat
@@ -32,6 +40,18 @@ public class NCConnector {
 	 * comentamos qué hace el código del primero.
 	 */
 	
+	/*
+	 * Aclaración:
+	 * El servidor no va a enviarnos mensajes con un formato inválido.
+	 * No es un problema suponer que el servidor funciona correctamente
+	 * y capturar las excepciones del tipo InvalidFormat al recibir un
+	 * paquete.
+	 * Con respecto al tratamiento, no hay que darle mucha importancia,
+	 * porque suponemos que no se va a aplicar; pero en cada sitio se
+	 * debería intentar devolver el valor que más cuadre si se diese un
+	 * error.
+	 */
+	
 	// Método para registrar el nick en el servidor. Nos informa sobre si la inscripción se hizo con éxito o no.
 	public boolean registerNickname(String nick) throws IOException {
 		//Funcionamiento resumido: SEND(nick) and RCV(NICK_OK) or RCV(NICK_DUPLICATED)
@@ -43,7 +63,7 @@ public class NCConnector {
 		try {
 			NCMessage answer = NCMessage.readMessageFromSocket(dis);
 			// Analizamos el mensaje para saber si está duplicado el nick (modificar el return en consecuencia)
-			return answer.getOp() == NCMessageOp.OK;			
+			return answer.getType() == NCMessageType.OK;			
 		} catch (InvalidFormat e) {
 			// The server is not gonna send a message with an invalid format
 			e.printStackTrace();
@@ -54,7 +74,7 @@ public class NCConnector {
 	//Método para obtener la lista de salas del servidor
 	public Collection<NCRoomDescription> getRooms() {
 		//Funcionamiento resumido: SND(GET_ROOMS) and RCV(ROOM_LIST)
-		NCControlMessage message = new NCControlMessage(NCMessageOp.ROOMS_LIST);
+		NCControlMessage message = new NCControlMessage(NCMessageType.ROOMS_LIST);
 		try {	//TODO ejemplo de manejo de errores, probablemente no se haga en el usuario, pero lo de implosions mola
 			dos.writeUTF(message.encode());
 			NCMessage answer = NCMessage.readMessageFromSocket(dis);
@@ -63,7 +83,7 @@ public class NCConnector {
 			System.err.println("Problems writting or receiving a message.");
 			e.printStackTrace();
 			return Collections.emptyList();
-		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+		} catch (InvalidFormat e) {
 			e.printStackTrace();
 			return null;
 		}
@@ -75,10 +95,21 @@ public class NCConnector {
 		dos.writeUTF(mess.encode());
 		try {
 			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			return answer.getOp() == NCMessageOp.OK;
-		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+			return answer.getType() == NCMessageType.OK;
+		} catch (InvalidFormat e) {
 			e.printStackTrace();
 			return false;
+		}
+	}
+	
+	public NCMessageType renameRoom(String newName) throws IOException {
+		NCRenameMessage mess = new NCRenameMessage(newName);
+		dos.writeUTF(mess.encode());
+		try {
+			return NCMessage.readMessageFromSocket(dis).getType();
+		} catch (InvalidFormat e) {
+			e.printStackTrace();
+			return NCMessageType.IMPOSSIBLE;
 		}
 	}
 	
@@ -89,8 +120,8 @@ public class NCConnector {
 		dos.writeUTF(message.encode());
 		try {
 			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			return answer.getOp() == NCMessageOp.OK;
-		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+			return answer.getType() == NCMessageType.OK;
+		} catch (InvalidFormat e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -99,7 +130,7 @@ public class NCConnector {
 	//Método para salir de una sala
 	public void leaveRoom() throws IOException {
 		//Funcionamiento resumido: SND(EXIT_ROOM)
-		NCControlMessage exitMess = new NCControlMessage(NCMessageOp.EXIT); 
+		NCControlMessage exitMess = new NCControlMessage(NCMessageType.EXIT); 
 		dos.writeUTF(exitMess.encode());
 	}
 	
@@ -126,7 +157,7 @@ public class NCConnector {
 	public NCMessage receiveMessage() throws IOException { 
 		try {
 			return NCMessage.readMessageFromSocket(dis);
-		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format 
+		} catch (InvalidFormat e) { 
 			e.printStackTrace();
 			return null; //TODO ver si cambiar
 		}
@@ -135,17 +166,17 @@ public class NCConnector {
 	//Método para pedir la descripción de una sala
 	public NCRoomDescription getRoomInfo() throws IOException {
 		//Funcionamiento resumido: SND(GET_ROOMINFO) and RCV(ROOMINFO)
-		//TODO Construimos el mensaje de solicitud de información de la sala específica
-		NCControlMessage request = new NCControlMessage(NCMessageOp.INFO);
+		// Construimos el mensaje de solicitud de información de la sala específica
+		NCControlMessage request = new NCControlMessage(NCMessageType.INFO);
 		dos.writeUTF(request.encode());
-		//TODO Recibimos el mensaje de respuesta
+		// Recibimos el mensaje de respuesta
 		try {
 			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			//TODO Devolvemos la descripción contenida en el mensaje
+			// Devolvemos la descripción contenida en el mensaje
 			return ((NCRoomInfoMessage) answer).getRoomDescription();
-		} catch (InvalidFormat e) { // The server is not gonna send a message with an invalid format
+		} catch (InvalidFormat e) {
 			e.printStackTrace();
-			return null; //TODO I dnt like it
+			return NCRoomDescription.invalidDescription();
 		}
 	}
 	
@@ -153,7 +184,7 @@ public class NCConnector {
 	// (Opcional) Enviar un mensaje de salida del servidor de Chat
 	public void disconnect() {
 		try {
-			dos.writeUTF(new NCControlMessage(NCMessageOp.QUIT).encode());
+			dos.writeUTF(new NCControlMessage(NCMessageType.QUIT).encode());
 		} catch (IOException e1) {
 			System.out.println("* There was an error disconnecting from the server");
 			e1.printStackTrace();

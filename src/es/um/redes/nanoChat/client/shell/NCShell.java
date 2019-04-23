@@ -86,7 +86,7 @@ public class NCShell {
 				}
 				break;
 			default:
-				System.out.println("That command is only valid if you are in a room");;
+				//System.out.println("That command is only valid if you are in a room");;
 			}
 			break;
 		}
@@ -155,12 +155,12 @@ public class NCShell {
 			case SEND:
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
-					message.append(st.nextToken()+" "); //TODO menuda patata Óscar >.<
+					message.append(st.nextToken()+" "); //TODO no me gustan este tipo de cosas, pero es mucha paliza cambiar esta clase
 				}
 				vargs.add(message.toString());
 				break;
 			default:
-				System.out.println("That command is only valid if you are not in a room");;
+				//System.out.println("That command is only valid if you are not in a room");;
 			}
 			break;
 		}
@@ -178,7 +178,6 @@ public class NCShell {
 			if (args.length == 0 || args.length > 1) {
 				System.out.println("Correct use: " + command.getName() + " <room>");
 			}
-			break;
 		//enter requiere el parámetro <room>
 		case ENTER:
 			if (args.length == 0 || args.length > 1) {

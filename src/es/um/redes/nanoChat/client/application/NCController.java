@@ -8,8 +8,8 @@ import es.um.redes.nanoChat.client.comm.NCConnector;
 import es.um.redes.nanoChat.client.shell.NCCommands;
 import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
-import es.um.redes.nanoChat.messageFV.NCMessage;
-import es.um.redes.nanoChat.messageFV.NCTextMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
 public class NCController {
@@ -231,7 +231,7 @@ public class NCController {
 			//Recibir el mensaje
 			NCMessage message = ncConnector.receiveMessage();
 			//TODO En función del tipo de mensaje, actuar en consecuencia
-			switch(message.getOp()){
+			switch(message.getType()){
 			case NEW_DM: //TODO DM
 				//System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
 			//(Ejemplo) En el caso de que fuera un mensaje de chat de broadcast mostramos la información de quién envía el mensaje y el mensaje en sí

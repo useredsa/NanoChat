@@ -1,4 +1,4 @@
-package es.um.redes.nanoChat.messageFV.encoding;
+package es.um.redes.nanoChat.messageFV;
 
 public class InvalidFormat extends Exception {
 	private static final long serialVersionUID = 3242924640381072936L;

@@ -1,11 +1,12 @@
-package es.um.redes.nanoChat.messageFV;
+package es.um.redes.nanoChat.messageFV.messages;
 
-import es.um.redes.nanoChat.messageFV.encoding.InvalidFormat;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageDecoder;
-import es.um.redes.nanoChat.messageFV.encoding.NCMessageEncoder;
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.NCMessageDecoder;
+import es.um.redes.nanoChat.messageFV.NCMessageEncoder;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
 
 public class NCEnterMessage implements NCMessage {
-	static private final NCMessageOp MESSAGE_OP = NCMessageOp.ENTER;
+	static private final NCMessageType MESSAGE_OP = NCMessageType.ENTER;
 	static private final String FIELD_NAME = "Room";
 	private final String roomName;
 	
@@ -14,7 +15,7 @@ public class NCEnterMessage implements NCMessage {
 	}
 	
 	@Override
-	public NCMessageOp getOp() {
+	public NCMessageType getType() {
 		return MESSAGE_OP;
 	}
 	
