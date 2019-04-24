@@ -165,6 +165,7 @@ public class NCServerThread extends Thread {
 				case PROMOTE:
 					NCControlMessage promoteAnswer = roomManager.promote(user, ((NCPromoteMessage) message).getUser());
 					dos.writeUTF(promoteAnswer.encode());
+					break;
 				case KICK:
 					NCControlMessage kickAnswer = roomManager.kick(user, ((NCKickMessage) message).getUser());  
 					dos.writeUTF(kickAnswer.encode());

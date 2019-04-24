@@ -122,6 +122,7 @@ public class NCConnector {
 	
 	public NCControlMessage promote(String user) throws IOException {
 		NCPromoteMessage mess = new NCPromoteMessage(user);
+		dos.writeUTF(mess.encode());
 		try {
 			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
 		} catch (InvalidFormat e) {

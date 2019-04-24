@@ -209,13 +209,13 @@ public class NCController {
 		if (ncConnector.enterRoom(roomName)) {
 			room = roomName;
 			// En caso contrario informamos que estamos dentro y seguimos
-			System.out.println("You entered the room.");
+			System.out.println("* You entered the room.");
 			// Cambiamos el estado del autómata para aceptar nuevos comandos
 			clientStatus = NCClientStatus.IN_ROOM;
 			return;
 		}
 		// Si la respuesta es un rechazo entonces informamos al usuario
-		System.out.println("The room doesn't exist or you cannot enter that room"); //TODO consider put smt if banned?
+		System.out.println("* The room doesn't exist or you cannot enter that room"); //TODO consider put smt if banned?
 	}
 
 	//Método para solicitar al servidor la información sobre una sala y para mostrarla por pantalla
@@ -246,7 +246,7 @@ public class NCController {
 		switch(serversAnswer.getType()) {
 		case OK:
 			room = newName;
-			System.out.println("* The room name was changed. You are in the room " + newName);
+			System.out.println("* The room name was changed. You are now in the room " + newName);
 			break;
 		case DENIED:
 			System.out.println("* You are not allowed to change this room's name");
@@ -265,17 +265,17 @@ public class NCController {
 		NCControlMessage serversAnswer = ncConnector.promote(user);
 		switch(serversAnswer.getType()) {
 		case OK:
-			System.out.println("* The user " + user + " was kicked from the room");
+			System.out.println("* You made " + user + " an administrator.");
 			break;
 		case DENIED:
-			System.out.println("* You are not allowed to promote anyone to administrator in this room");
+			System.out.println("* You are not allowed to promote anyone to administrator in this room.");
 			break;
 		case REPEATED:
-			System.out.println("* The user " + user + " is already an administrator");
+			System.out.println("* " + user + " is already an administrator.");
 			break;
 		default:
 		case IMPOSSIBLE:
-			System.out.println("* Users can't be promoted in this room");
+			System.out.println("* Users can't be promoted in this room.");
 			break;
 		}
 	}
@@ -284,14 +284,14 @@ public class NCController {
 		NCControlMessage serversAnswer = ncConnector.kick(user);
 		switch (serversAnswer.getType()) {
 		case OK:
-			System.out.println("* The user " + user + " was kicked from the room");
+			System.out.println("* You kicked out " + user + " from the room");
 			break;
 		case DENIED:
 			System.out.println("* The user " + user + " can't be kicked of the room or you are not allowed to kick users in this room");
 			break;
 		case IMPOSSIBLE:
 		default:
-			System.out.println("* The user is not in the room or users cannot be kicked in this room");
+			System.out.println("* " + user + " is not in the room or users cannot be kicked in this room");
 			break;
 		}
 	}
