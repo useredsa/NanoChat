@@ -12,6 +12,7 @@ public enum NCCommands {
 	SEND		("send",	"to send a <message> in the chat"),
 	DM			("dm",		"to send <user> a <message>"),
 	INFO		("info",	"shows the information of the room"),
+	PROMOTE		("promote",	"promote a <user> to administrator of the room"),
 	KICK		("kick",	"kicks out the <user> from the room"),
 	QUIT		("quit",	"to quit the application"),
 	HELP		("help",	"shows this information");

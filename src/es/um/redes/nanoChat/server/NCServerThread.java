@@ -6,16 +6,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 
-import es.um.redes.nanoChat.messageFV.*;
-import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCCreateMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCEnterMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRegisterMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRenameMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRoomInfoMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRoomListMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCSendMessage;
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
+import es.um.redes.nanoChat.messageFV.messages.*;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 import es.um.redes.nanoChat.server.roomManager.NCRoomManager;
 
@@ -36,6 +29,7 @@ public class NCServerThread extends Thread {
 	NCRoomManager roomManager;
 	//Sala actual
 	String currentRoom;
+	private boolean mustBeKicked = false;
 
 	// Inicialización de la sala
 	public NCServerThread(NCServerManager manager, Socket socket) throws IOException {
@@ -54,7 +48,7 @@ public class NCServerThread extends Thread {
 			//En primer lugar hay que recibir y verificar el nick
 			receiveAndVerifyNickname();
 			//Mientras que la conexión esté activa entonces...
-			while (true) {
+			while (true) {//TODO romper en bloques, no?
 				// Obtenemos el mensaje que llega y analizamos su código de operación
 				NCMessage message = NCMessage.readMessageFromSocket(dis);
 				switch (message.getType()) {
@@ -65,25 +59,27 @@ public class NCServerThread extends Thread {
 				// Request to create a room
 				case CREATE:
 					String roomName = ((NCCreateMessage) message).getRoomName();
-					roomManager = serverManager.createRoom(user, roomName, socket);
+					roomManager = serverManager.createRoom(roomName, user, this);
 					// If allowed, notify the client moved to the room and answered OK
 					if (roomManager != null) {
 						dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
 						currentRoom = roomName;
 						processRoomMessages();
-					} else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
+					} else dos.writeUTF(new NCControlMessage(NCMessageType.REPEATED).encode());
 					break;
 				
 				// Request to enter a room
 				case ENTER:
 					String room = ((NCEnterMessage) message).getRoomName();
-					roomManager = serverManager.enterRoom(user, room, socket);
+					roomManager = serverManager.getRoomManager(room);
 					// If allowed, notify the client and start processing messages with processRoomMessages()
 					if (roomManager != null) {
-						dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
-						currentRoom = room;
-						processRoomMessages();
-					} else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
+						if (roomManager.enter(user, this)) {
+							dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
+							currentRoom = room;
+							processRoomMessages();
+						} else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
+					} else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
 					break;
 				default: // Si el mensaje no se encuentra entre los que se pueden enviar:
 					NCControlMessage answer = new NCControlMessage(NCMessageType.INVALID_CODE);
@@ -95,7 +91,9 @@ public class NCServerThread extends Thread {
 		} catch (Exception e) {
 			//If an error occurs with the communications the user is removed from all the managers and the connection is closed
 			System.out.println("* User "+ user + " disconnected. " + e.getMessage());
-			serverManager.leaveRoom(user, currentRoom);
+			if (roomManager != null) {
+				roomManager.exit(user);
+			}
 			serverManager.removeUser(user);
 		}
 		finally {
@@ -136,10 +134,16 @@ public class NCServerThread extends Thread {
 	private void processRoomMessages() throws InvalidFormat  { //TODO acabar //TODO quitar invalid format con metodo, as above 
 		// Loop until the user exits this room
 		boolean exit = false;
+		mustBeKicked = false;
 		while (!exit) {			
 			try {
 				// Read new message
 				NCMessage message = NCMessage.readMessageFromSocket(dis);
+				// If we were notified that we got kicked while reading a message,
+				// we must exit this room
+				if (mustBeKicked) {
+					break;
+				}
 				switch (message.getType()) {
 				case INFO:
 					NCRoomInfoMessage infoMessage = new NCRoomInfoMessage(roomManager.getDescription());
@@ -156,28 +160,19 @@ public class NCServerThread extends Thread {
 							// situacion de arriba. Si se quita esto hay que borrar en NCMessagOP, NCControlMessage 
 							// NCMessage, NCConnector.disconnect
 				case EXIT:
-					serverManager.leaveRoom(user, currentRoom); 
-					roomManager = null;
-					currentRoom = null;
 					exit = true;
 					break;
-				//case KICK: //TODO
+				case PROMOTE:
+					NCControlMessage promoteAnswer = roomManager.promote(user, ((NCPromoteMessage) message).getUser());
+					dos.writeUTF(promoteAnswer.encode());
+				case KICK:
+					NCControlMessage kickAnswer = roomManager.kick(user, ((NCKickMessage) message).getUser());  
+					dos.writeUTF(kickAnswer.encode());
+					break;
 				//case UPLOAD: //TODO
 				case RENAME: //TODO separar estas cosas en funciones y eso (las que sean largas, las otras se pueden quedar)
-					NCControlMessage ans;
-					switch(roomManager.rename(user, ((NCRenameMessage) message).getNewName())) {
-					case 0:
-						ans = new NCControlMessage(NCMessageType.OK);
-						break;
-					case 1:
-						ans = new NCControlMessage(NCMessageType.IMPOSSIBLE);
-						break;
-					case 2:
-					default:
-						ans = new NCControlMessage(NCMessageType.DENIED);
-						break;
-					}
-					dos.writeUTF(ans.encode());
+					NCControlMessage renAnswer = roomManager.rename(user, ((NCRenameMessage) message).getNewName());
+					dos.writeUTF(renAnswer.encode());
 					break;
 				default: //TODO ver qué hacer si es un mensaje no soportado
 					break;
@@ -187,5 +182,25 @@ public class NCServerThread extends Thread {
 				e.printStackTrace();
 			}
 		}
+		
+		// Exit protocol
+		roomManager.exit(user);
+		roomManager = null;
+		currentRoom = null;
+	}
+	
+	public void forceExit() {
+		mustBeKicked = true;
+		NCControlMessage kicked = new NCControlMessage(NCMessageType.KICKED);
+		try {
+			dos.writeUTF(kicked.encode());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public Socket getSocket() {
+		return socket;
 	}
 }

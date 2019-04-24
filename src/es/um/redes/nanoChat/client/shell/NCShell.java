@@ -142,16 +142,26 @@ public class NCShell {
 			}
 			command = NCCommands.stringToCommand(st.nextToken());
 			switch (command) {
+			// Special commands:
 			case INVALID:
 				System.out.println("Invalid command ("+input+")");
 				continue;
 			case HELP:
 				NCCommands.printCommandsHelp();
 				continue;
+			// This commands don't require parameters:
 			case INFO:
-				break;
 			case EXIT:
 				break;
+			// This commands require parameters:
+			case RENAME:
+			case PROMOTE:
+			case KICK:
+				while (st.hasMoreTokens()) {
+					vargs.add(st.nextToken());
+				}
+				break;
+			// This command requires an special parameter:
 			case SEND:
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
@@ -173,17 +183,23 @@ public class NCShell {
 	//TODO parsear comandos en el clase enum, y hacer para que salga automaticamente getName() y con el numero de comandos, etc
 	private boolean validateCommandArguments(String[] args) {
 		switch(this.command) {
-		// CREATE requires the room name
+		// CREATE/ENTER require the room name
 		case CREATE:
+		case ENTER:
 			if (args.length == 0 || args.length > 1) {
 				System.out.println("Correct use: " + command.getName() + " <room>");
 			}
-		//enter requiere el parámetro <room>
-		case ENTER:
+		// RENAME requires the new name
+		case RENAME:
 			if (args.length == 0 || args.length > 1) {
-				System.out
-						.println("Correct use: enter <room>");
-				return false;
+				System.out.println("Correct use: " + command.getName() + " <NewRoomName>");
+			}
+			break;
+		// PROMOTE/KICK require the username
+		case PROMOTE:
+		case KICK:
+			if (args.length == 0 || args.length > 1) {
+				System.out.println("Correct use: " + command.getName() + " <user>");
 			}
 			break;
 		//nick requiere el parámetro <nickname>

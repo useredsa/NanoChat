@@ -11,6 +11,7 @@ public enum NCMessageType {
 	RENAME("Rename"), 
 	ENTER("Enter"), 
 	INFO("Get info"), 
+	PROMOTE("Promote"),
 	KICK("RICKROLL"),
 	SEND("Send text message"), 
 	DM("Send DM"), 

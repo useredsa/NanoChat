@@ -12,14 +12,12 @@ import es.um.redes.nanoChat.server.roomManager.NCRoomManager;
 /**
  * Esta clase contiene el estado general del servidor (sin la lógica relacionada con cada sala particular)
  */
-class NCServerManager {
+public class NCServerManager {
 	
 	//TODO quitar estos datos para la primera habitación
 	//Primera habitación del servidor
 	final static byte INITIAL_ROOM = 'A';
 	final static String ROOM_PREFIX = "Room";
-	//Siguiente habitación que se creará
-	byte nextRoom;
 	private HashSet<String> users = new HashSet<String>(); 									// Registered nicknames
 	private HashMap<String, NCRoomManager> rooms = new HashMap<String, NCRoomManager>();	// Available Rooms (and their room managers)
 	//TODO El nombre de la sala es una información que ya se encuentra en el NCRoomManager, así que no deberíamos asociarlo de esta manera,
@@ -28,7 +26,6 @@ class NCServerManager {
 	
 	
 	NCServerManager() {
-		nextRoom = INITIAL_ROOM;
 	}
 	
 	//Devuelve la descripción de las salas existentes
@@ -56,47 +53,32 @@ class NCServerManager {
 		users.remove(user);
 	}
 	
-	// Registers a room manager, therefore creating a new room 
-	private void registerRoomManager(NCRoomManager rm) {
-		if (rooms.containsKey(rm.getRoomName())) {
-			System.err.println("A room was registered with a duplicated name.");
-			System.exit(-2); //TODO manejar mejor el problema
-		}
-		rooms.put(rm.getRoomName(), rm);
-	}
-	
 	// Process request from user u to create room
-	public NCRoomManager createRoom(String u, String room, Socket s) {
+	public NCRoomManager createRoom(String room, String u, NCServerThread th) {
 		// Check a room with the same name doesn't exist
 		if (rooms.containsKey(room))
 			return null;
 		// Create a new BasicRoom and register its RoomManager
-		NCRoomManager rm = new NCBasicRoom(room, u, s);
-		registerRoomManager(rm);
+		NCRoomManager rm = new NCBasicRoom(this, room, u, th);
+		rooms.put(rm.getRoomName(), rm);
 		return rm;
 	}
 	
-	// Process request from user u to enter room
-	public synchronized NCRoomManager enterRoom(String u, String room, Socket s) {
-		// Check the room exists
-		if (!rooms.containsKey(room))
-			return null;
-		// Try to register user and return the RoomManager
-		NCRoomManager roomManager = rooms.get(room); 
-		if (roomManager.registerUser(u, s)) {
-			return roomManager;
-		}
-		return null;
+	// Llamada por las salas
+	public synchronized boolean renameRoom(String oldName, String newName) {
+		if (rooms.containsKey(newName))
+			return false;
+		rooms.put(newName, rooms.get(oldName));
+		rooms.remove(oldName);
+		return true;
 	}
 	
-	//Un usuario deja la sala en la que estaba 
-	public synchronized void leaveRoom(String u, String room) { 
-		// Verificamos si la sala existe
-		//TODO revisar jm
-		if(rooms.containsKey(room)) {
-			// Si la sala existe sacamos al usuario de la sala
-			rooms.get(room).removeUser(u);			
-				
-		}	
+	// Process request from user u to enter room
+	public synchronized NCRoomManager getRoomManager(String room) {
+		// Check the room exists
+		if (!rooms.containsKey(room))
+			return null; //TODO change
+		// Try to register user and return the RoomManager
+		return rooms.get(room); 
 	}
 }

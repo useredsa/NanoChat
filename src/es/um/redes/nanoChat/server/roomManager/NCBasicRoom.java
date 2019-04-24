@@ -2,37 +2,42 @@ package es.um.redes.nanoChat.server.roomManager;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import es.um.redes.nanoChat.messageFV.NCMessageType;
+import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
+import es.um.redes.nanoChat.server.NCServerManager;
+import es.um.redes.nanoChat.server.NCServerThread;
 
 public class NCBasicRoom implements NCRoomManager {
+	private final NCServerManager serverManager;
 	private String roomName;
 	private final String creator;
 	private final HashSet<String> admins;
-	private final HashMap<String, Socket> members;
+	private final HashMap<String, NCServerThread> members;
 	private long timeLastMessage = 0; //TODO variable que sacaremos de la lista de mensajes
 	
-	public NCBasicRoom(String name, String creator, Socket s) {
+	public NCBasicRoom(NCServerManager serverManager, String name, String creator, NCServerThread th) {
+		this.serverManager = serverManager;
 		roomName = name;
 		this.creator = creator;
 		admins = new HashSet<String>();
-		members = new HashMap<String, Socket>();
-		registerUser(creator, s);
+		members = new HashMap<String, NCServerThread>();
+		enter(creator, th);
 	}
 
 	@Override
-	public boolean registerUser(String u, Socket s) {
-		if (members.containsKey(u)) return false;
-		members.put(u, s);
+	public boolean enter(String u, NCServerThread th) {
+		if (members.containsKey(u)) return false; //TODO notificar entradas y salidas (y entonces cambiar el constructor para que no llame a esto)
+		members.put(u, th);
 		return true;
 	}
 	
 	@Override
-	public void removeUser(String u) {
+	public void exit(String u) {
 		members.remove(u);
 	}
 
@@ -40,7 +45,7 @@ public class NCBasicRoom implements NCRoomManager {
 	public void broadcastMessage(String u, String message) throws IOException {
 		for(String e : members.keySet()) {
 			if (!e.equals(u)) {
-				DataOutputStream dos = new DataOutputStream(members.get(e).getOutputStream()); //TODO preguntar oscar (concurrencia?)
+				DataOutputStream dos = new DataOutputStream(members.get(e).getSocket().getOutputStream()); //TODO preguntar oscar (concurrencia?)
 				dos.writeUTF(new NCTextMessage(u,message).encode());
 			}
 		}
@@ -52,33 +57,61 @@ public class NCBasicRoom implements NCRoomManager {
 	}
 
 	@Override
-	public int rename(String user, String newName) {
+	public NCControlMessage rename(String user, String newName) {
 		if (hasRights(user)) {
-			this.roomName = newName;
-			return 0; // The operation was successful
-		} else return 2; // The user has no rights
+			if (serverManager.renameRoom(roomName, newName)) {
+				// The operation can be performed
+				this.roomName = newName; //TODO notificar al resto
+				return new NCControlMessage(NCMessageType.OK);				
+			} else {
+				// There's another room with the newName
+				return new NCControlMessage(NCMessageType.REPEATED);
+			}
+		} else {
+			// The user has no rights
+			return new NCControlMessage(NCMessageType.DENIED);
+		}
 	}
 	
 	@Override
-	public int promote(String user, String promoted) {
+	public NCControlMessage promote(String user, String promoted) {
 		if (hasRights(user)) {
 			if (!hasRights(promoted)) {
-				admins.add(promoted);
-				return 0; // The operation was successful
-			} else return 3; // The target already has rights
-		} else return 2; // The user has no rights
+				// The operation can be performed
+				admins.add(promoted); //TODO notificar a la otra persona
+				return new NCControlMessage(NCMessageType.OK);
+			} else {
+				// The target already has rights
+				return new NCControlMessage(NCMessageType.REPEATED);
+			}
+		} else {
+			// The user has no rights
+			return new NCControlMessage(NCMessageType.DENIED);
+		}
 	}
 	
 	@Override
-	public int kick(String user, String kicked) {
+	public NCControlMessage kick(String user, String kicked) {
 		if (hasRights(user) && !hasRights(kicked)) {
 			if (!hasRights(kicked)) {
 				if (members.containsKey(kicked)) {
-					//TODO remover de la sala, notificar a su thread, etc
-					return 0; // The operation was successful
-				} else return 4; // The target is not in the room
-			} else return 3; // The target cannot be kicked
-		} else return 2; // The user has no rights
+					// The operation can be performed
+					NCServerThread th = members.get(kicked);
+					th.forceExit(); // Notify the user being kicked
+					exit(kicked);	// Remove user from the room
+					return new NCControlMessage(NCMessageType.OK);
+				} else {
+					// The target is not in the room
+					return new NCControlMessage(NCMessageType.IMPOSSIBLE);
+				}
+			} else {
+				// The target cannot be kicked
+				return new NCControlMessage(NCMessageType.IMPOSSIBLE);
+			}
+		} else {
+			// The user has no rights
+			return new NCControlMessage(NCMessageType.DENIED);
+		}
 	}
 
 	@Override

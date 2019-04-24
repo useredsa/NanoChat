@@ -9,16 +9,9 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 
-import es.um.redes.nanoChat.messageFV.*;
-import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCCreateMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCEnterMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRegisterMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRenameMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRoomInfoMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCRoomListMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCSendMessage;
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
+import es.um.redes.nanoChat.messageFV.messages.*;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
 //Esta clase proporciona la funcionalidad necesaria para intercambiar mensajes entre el cliente y el servidor de NanoChat
@@ -102,17 +95,6 @@ public class NCConnector {
 		}
 	}
 	
-	public NCMessageType renameRoom(String newName) throws IOException {
-		NCRenameMessage mess = new NCRenameMessage(newName);
-		dos.writeUTF(mess.encode());
-		try {
-			return NCMessage.readMessageFromSocket(dis).getType();
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return NCMessageType.IMPOSSIBLE;
-		}
-	}
-	
 	// Método para solicitar la entrada en una sala
 	public boolean enterRoom(String room) throws IOException {
 		// Funcionamiento resumido: SND(ENTER_ROOM<room>) and RCV(IN_ROOM) or RCV(REJECT)
@@ -124,6 +106,38 @@ public class NCConnector {
 		} catch (InvalidFormat e) {
 			e.printStackTrace();
 			return false;
+		}
+	}
+	
+	public NCControlMessage renameRoom(String newName) throws IOException {
+		NCRenameMessage mess = new NCRenameMessage(newName);
+		dos.writeUTF(mess.encode());
+		try {
+			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
+		} catch (InvalidFormat e) {
+			e.printStackTrace();
+			return new NCControlMessage(NCMessageType.IMPOSSIBLE);
+		}
+	}
+	
+	public NCControlMessage promote(String user) throws IOException {
+		NCPromoteMessage mess = new NCPromoteMessage(user);
+		try {
+			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
+		} catch (InvalidFormat e) {
+			e.printStackTrace();
+			return new NCControlMessage(NCMessageType.IMPOSSIBLE);
+		}
+	}
+	
+	public NCControlMessage kick(String user) throws IOException {
+		NCKickMessage mess = new NCKickMessage(user);
+		dos.writeUTF(mess.encode());
+		try {
+			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
+		} catch (InvalidFormat e) {
+			e.printStackTrace();
+			return new NCControlMessage(NCMessageType.IMPOSSIBLE);
 		}
 	}
 	
