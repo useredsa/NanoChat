@@ -7,7 +7,7 @@ import es.um.redes.nanoChat.messageFV.NCMessageType;
 
 public class NCCreateMessage implements NCMessage {
 	static private final NCMessageType MESSAGE_OP = NCMessageType.CREATE;
-	static private final String FIELD_NAME = "Room name";
+	static private final String FIELD_NAME = "Room";
 	private final String roomName;
 	
 	public NCCreateMessage(String roomName) {

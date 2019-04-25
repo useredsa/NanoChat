@@ -12,8 +12,8 @@ public enum NCMessageType {
 	ENTER("Enter"), 
 	INFO("Get info"), 
 	PROMOTE("Promote"),
-	KICK("RICKROLL"),
-	SEND("Send text message"), 
+	KICK("RICKROLL"),				// Un poquito de gracia :p
+	SEND("Send"), 
 	DM("Send DM"), 
 	UPLOAD("Upload file"), 
 	EXIT("Exit room"), 
@@ -26,7 +26,7 @@ public enum NCMessageType {
 	IMPOSSIBLE("Impossible"),
 	ROOMS_LIST("Rooms List"),
 	ROOM_INFO("Room info"),
-	KICKED("YOU GOT RICKROLLED"), 
+	KICKED("YOU GOT RICKROLLED"), 	// Un poquito de gracia :P 
 	NEW_MESSAGE("New text message"), 
 	NEW_DM("New DM"), 
 	NEW_FILE("New file");

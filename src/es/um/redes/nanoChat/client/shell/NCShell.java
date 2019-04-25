@@ -200,6 +200,7 @@ public class NCShell {
 		case KICK:
 			if (args.length == 0 || args.length > 1) {
 				System.out.println("Correct use: " + command.getName() + " <user>");
+				return false;
 			}
 			break;
 		//nick requiere el parámetro <nickname>
