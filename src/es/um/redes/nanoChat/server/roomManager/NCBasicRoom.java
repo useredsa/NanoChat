@@ -8,6 +8,7 @@ import java.util.HashSet;
 
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCNotificationMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
 import es.um.redes.nanoChat.server.NCServerManager;
 import es.um.redes.nanoChat.server.NCServerThread;
@@ -26,19 +27,41 @@ public class NCBasicRoom implements NCRoomManager {
 		this.creator = creator;
 		admins = new HashSet<String>();
 		members = new HashMap<String, NCServerThread>();
-		enter(creator, th);
+		members.put(creator, th); //TODO revisar jm
 	}
-
+	
+	private void sendNotification(String user, NCMessageType action) {
+		//sendNotification(user, action, "null");
+	}
+	
+	private void sendNotification(String user, NCMessageType action, String object)  {
+		//if (object == null) object = "null";
+		/*try {
+			for(String e : members.keySet()) {
+				if (!e.equals(user) || (!e.equals(object))) {//object != null && 
+					DataOutputStream dos;
+					dos = new DataOutputStream(members.get(e).getSocket().getOutputStream()); //TODO preguntar oscar (concurrencia?)
+					dos.writeUTF(new NCNotificationMessage(user,action,object).encode());
+				}
+			}
+		} catch (IOException e1) {
+			System.err.println("* An error ocurred while notifying in room: "+roomName);
+			//e1.printStackTrace();
+		}*/
+	}
+	
 	@Override
 	public boolean enter(String u, NCServerThread th) {
-		if (members.containsKey(u)) return false; //TODO notificar entradas y salidas (y entonces cambiar el constructor para que no llame a esto)
+		if (members.containsKey(u)) return false;
 		members.put(u, th);
+		sendNotification(u, NCMessageType.ENTER);
 		return true;
 	}
 	
 	@Override
 	public void exit(String u) {
-		members.remove(u);
+		members.remove(u); 
+		sendNotification(u, NCMessageType.EXIT);
 	}
 
 	@Override 
@@ -61,7 +84,8 @@ public class NCBasicRoom implements NCRoomManager {
 		if (hasRights(user)) {
 			if (serverManager.renameRoom(roomName, newName)) {
 				// The operation can be performed
-				this.roomName = newName; //TODO notificar al resto
+				this.roomName = newName;
+				sendNotification(user, NCMessageType.RENAME, newName);
 				return new NCControlMessage(NCMessageType.OK);				
 			} else {
 				// There's another room with the newName
@@ -78,7 +102,8 @@ public class NCBasicRoom implements NCRoomManager {
 		if (hasRights(user)) {
 			if (!hasRights(promoted)) {
 				// The operation can be performed
-				admins.add(promoted); //TODO notificar a la otra persona
+				admins.add(promoted); 
+				sendNotification(user, NCMessageType.PROMOTE, promoted);
 				return new NCControlMessage(NCMessageType.OK);
 			} else {
 				// The target already has rights
@@ -98,7 +123,8 @@ public class NCBasicRoom implements NCRoomManager {
 					// The operation can be performed
 					NCServerThread th = members.get(kicked);
 					th.forceExit(); // Notify the user being kicked
-					exit(kicked);	// Remove user from the room
+					members.remove(kicked);	// Remove user from the room
+					sendNotification(user, NCMessageType.KICK, kicked);
 					return new NCControlMessage(NCMessageType.OK);
 				} else {
 					// The target is not in the room

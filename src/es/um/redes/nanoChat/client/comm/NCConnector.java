@@ -157,9 +157,8 @@ public class NCConnector {
 	//IMPORTANTE!!
 	//Es necesario implementar métodos para recibir y enviar mensajes de chat a una sala
 	//TODO revisar jm
-	//Metodo para mandar un DM a una persona de la sala de chat
-	//emilio: no sera mejor llamarlo con dm?
-	public void sendMessage(String receiver, String text) throws IOException{
+	//Metodo para mandar un DM a una persona 
+	public void sendDM(String receiver, String text) throws IOException{
 		//dos.writeUTF(new NCDMMessage(NCMessageOp.DM, receiver, text).encode()); //TODO mensaje dm no implementado
 	}
 	//Metodo para mandar un mensaje a toda la sala de chat
@@ -201,7 +200,7 @@ public class NCConnector {
 		try {
 			dos.writeUTF(new NCControlMessage(NCMessageType.QUIT).encode());
 		} catch (IOException e1) {
-			System.out.println("* There was an error disconnecting from the server");
+			System.out.println("* There was an error while you were being disconnected from the server");
 			e1.printStackTrace();
 		}
 		try {

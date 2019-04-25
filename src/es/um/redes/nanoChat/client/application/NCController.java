@@ -8,8 +8,10 @@ import es.um.redes.nanoChat.client.comm.NCConnector;
 import es.um.redes.nanoChat.client.shell.NCCommands;
 import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
+import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCNotificationMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
@@ -53,7 +55,7 @@ public class NCController {
 			case QUIT:
 				break;
 			default:
-				System.out.println("* You can't perforom that action, you must register first");
+				System.out.println("* You can't perform that action, you must be registered");
 			}
 			// Change of state:
 			if (clientStatus == NCClientStatus.OUT_ROOM)
@@ -79,23 +81,21 @@ public class NCController {
 					
 				case ENTER:
 					enterChat(commandArgs[0]);
-					break;
-				//case RENAME: //TODO	
-					
+					break;			
 				case ROOMLIST:
 					getAndShowRooms();
 					break;
 				case QUIT:
 					break;
 				default:
-					System.out.println("* You can't use that command from outside a room");
+					System.out.println("* You can't use that command outside a room");
 				}
 				// Possible change of state:
 				if (clientStatus == NCClientStatus.IN_ROOM)
 					inRoomProcessing();
 			} catch (IOException e) {
 				//TODO cortar comunicación or whatever
-				System.err.println("There was an error with the connection.");
+				System.err.println("* There was an error with the connection.");
 			}
 		}
 	}
@@ -149,20 +149,24 @@ public class NCController {
 			NCMessage message = ncConnector.receiveMessage();
 			//TODO En función del tipo de mensaje, actuar en consecuencia
 			switch(message.getType()){
-			case NEW_DM: //TODO DM
+			case NEW_DM: 
 				//System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
 			//(Ejemplo) En el caso de que fuera un mensaje de chat de broadcast mostramos la información de quién envía el mensaje y el mensaje en sí
 			case NEW_MESSAGE:
-				System.out.println(((NCTextMessage)message).getUser()+": "+((NCTextMessage)message).getMessage()); //TODO Haz una conversión, no?
+				System.out.println(((NCTextMessage)message).getUser()+": "+((NCTextMessage)message).getMessage());//TODO Haz una conversión, no?
+				break;
 			case KICKED:
 				processKick();
+				break;
+			//case NOTIFICATION://TODO revisar jm
+				//processNotification(message);
 			} //TODO default?
 		} catch (IOException e) {
 			System.out.println("* There was an error receiving a new message");
 			e.printStackTrace();
 		}		
 	}
-
+	
 	// Método para registrar el nick del usuario en el servidor de NanoChat
 	private void registerNickName(String name) {
 		try {
@@ -200,7 +204,7 @@ public class NCController {
 			clientStatus = NCClientStatus.IN_ROOM;
 			return;
 		}
-		System.out.println("* You cannot create a room called " + room); //TODO manejar casos nombre repetido y demás
+		System.out.println("* You cannot create a room called " + room +". Try another."); //TODO manejar casos nombre repetido y demás
 	}
 
 	// Método para tramitar la solicitud de acceso del usuario a una sala concreta
@@ -238,7 +242,7 @@ public class NCController {
 		ncConnector.leaveRoom();
 		room = null;
 		clientStatus = NCClientStatus.OUT_ROOM;
-		System.out.println("* You are out of the room");
+		System.out.println("* You are now out of the room");
 	}
 	
 	private void renameRoom(String newName) throws IOException {
@@ -296,14 +300,37 @@ public class NCController {
 		}
 	}
 
+	private void processNotification(NCMessage message) {
+		String user = ((NCNotificationMessage) message).getUser();
+		String object = ((NCNotificationMessage) message).getObject();
+		NCMessageType action = ((NCNotificationMessage) message).getAction();
+		switch (action) {
+			case ENTER:
+				System.out.println("* User "+user+" has entered the room");
+				break;
+			case EXIT:
+				System.out.println("* User "+user+" has left the room");
+				break;
+			case RENAME:
+				room = object;
+				System.out.println("* Admin "+user+" change the room name to "+object);
+				break;
+			case KICK:
+				System.out.println("* Admin "+user+" kicked the pleb "+object);
+				break;
+			case PROMOTE:
+				System.out.println("* Now user "+object+" is a holder of the KICKSWORD, thanks to "+user);
+				break;
+		}
+	}
+	
 	//Método para enviar un mensaje al chat de la sala
 	private void sendChatMessage(String chatMessage) {
-		//Mandamos al servidor un mensaje de chat //TODO revisar jm
+		//Mandamos al servidor un mensaje de chat
 		try {
 			ncConnector.sendBroadcastMessage(chatMessage);
 		} catch (IOException e) {
-			System.out.println("* There was an error sending your message");
-			//e.printStackTrace();
+			System.out.println("* There was an error while you were sending your message");
 		}
 	}
 
