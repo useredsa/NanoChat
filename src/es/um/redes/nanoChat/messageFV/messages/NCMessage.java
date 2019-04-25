@@ -26,6 +26,8 @@ public interface NCMessage {
 			break;
 		case KICK:
 			return NCKickMessage.decode(dec);
+		case NOTIFICATION:
+			return NCNotificationMessage.decode(dec);
 		//case NEW_DM: //TODO
 			
 		//case NEW_FILE: //TODO

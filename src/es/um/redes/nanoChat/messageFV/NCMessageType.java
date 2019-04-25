@@ -29,7 +29,8 @@ public enum NCMessageType {
 	KICKED("YOU GOT RICKROLLED"), 	// Un poquito de gracia :P 
 	NEW_MESSAGE("New text message"), 
 	NEW_DM("New DM"), 
-	NEW_FILE("New file");
+	NEW_FILE("New file"),
+	NOTIFICATION("New Notification");
 	
 	private final String messageText;	// Text that appears in the Field-Value encoding 
 	

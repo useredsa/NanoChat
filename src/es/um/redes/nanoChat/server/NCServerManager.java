@@ -49,7 +49,6 @@ public class NCServerManager {
 	//Elimina al usuario del servidor
 	public synchronized void removeUser(String user) {
 		// Elimina al usuario del servidor
-		//TODO revisar jm
 		users.remove(user);
 	}
 	

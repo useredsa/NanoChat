@@ -55,7 +55,8 @@ public class NCServerThread extends Thread {
 				case ROOMS_LIST: // 1) si se nos pide la lista de salas se envía llamando a sendRoomList();
 					sendRoomList();
 					break;
-				
+				//TODO DM
+					
 				// Request to create a room
 				case CREATE:
 					String roomName = ((NCCreateMessage) message).getRoomName();
