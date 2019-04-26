@@ -35,7 +35,9 @@ public class NCGlobalRoom implements NCRoomManager {
 	
 	@Override
 	public synchronized void exit(String user) {
-		members.remove(user);
+		DataOutputStream dos = members.remove(user);
+		if (dos != null)
+			dos.close();
 	}
 
 	@Override 
