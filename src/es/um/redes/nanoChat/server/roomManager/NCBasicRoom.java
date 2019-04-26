@@ -72,10 +72,13 @@ public class NCBasicRoom implements NCRoomManager {
 	}
 	
 	@Override
-	public synchronized void exit(String user) {
+	public synchronized void exit(String user) throws IOException {
 		admins.remove(user);
-		if (members.remove(user) != null)
+		UserInfo info = members.remove(user);
+		if (info != null) {
+			info.dos.close();
 			sendNotification(user, NCMessageType.EXIT);
+		}
 		if (members.isEmpty()) {
 			serverManager.deleteRoom(roomName);
 			deleted = true;

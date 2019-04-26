@@ -67,7 +67,11 @@ public class NCServerThread extends Thread {
 			// If an error occurs with the communications the user is removed from all the managers and the connection is closed
 			if (user != null) {
 				if (roomManager != null) {
-					roomManager.exit(user);
+					try {
+						roomManager.exit(user);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 				serverManager.removeUser(user);
 			}
@@ -75,6 +79,7 @@ public class NCServerThread extends Thread {
 				try {
 					socket.close();
 				} catch (IOException e1) {
+					System.err.println("* Important: Could not close the socket!");
 					e1.printStackTrace();
 				}
 			}

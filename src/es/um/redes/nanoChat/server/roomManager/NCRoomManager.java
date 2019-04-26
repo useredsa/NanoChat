@@ -11,7 +11,7 @@ public interface NCRoomManager {
 	//Método para registrar a un usuario u en una sala (se anota también su socket de comunicación)
 	public abstract boolean enter(String user, NCServerThread userThread) throws IOException;
 	//Método para eliminar un usuario de una sala
-	public abstract void exit(String user);
+	public abstract void exit(String user) throws IOException;
 	//Método para hacer llegar un mensaje enviado por un usuario u
 	public abstract void broadcastMessage(String user, String message);
 	//Método para devolver la descripción del estado actual de la sala
