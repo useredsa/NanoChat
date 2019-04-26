@@ -11,7 +11,7 @@ import es.um.redes.nanoChat.messageFV.NCMessageType;
 public interface NCMessage {
 	
 	// Extrae la operación del mensaje entrante y usa la subclase para parsear el resto del mensaje
-	public static NCMessage readMessageFromSocket(DataInputStream dis) throws IOException, InvalidFormat {
+	public static NCMessage readFromSocket(DataInputStream dis) throws IOException, InvalidFormat {
 		String message = dis.readUTF();
 		NCMessageDecoder dec = new NCMessageDecoder(message);
 		NCMessageType op = dec.getMessageOp();
@@ -62,6 +62,17 @@ public interface NCMessage {
 			System.err.println("In class NCMessage: Yet unimplemented method (You fool)");
 		}
 		return null; // Won't reach here
+	}
+	
+	public static NCMessage readFromSocketNoChecks(DataInputStream dis) throws IOException {
+		try {
+			return readFromSocket(dis);
+		} catch (InvalidFormat e) {
+			System.err.println("While reading without format checks, an invalid format was encountered. Terminating application...");
+			e.printStackTrace();
+			System.exit(0);
+			return null;
+		}
 	}
 	
 	// Devuelve el opcode del mensaje

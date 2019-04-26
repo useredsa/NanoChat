@@ -5,7 +5,7 @@ import java.net.InetSocketAddress;
 import java.util.Collection;
 
 import es.um.redes.nanoChat.client.comm.NCConnector;
-import es.um.redes.nanoChat.client.shell.NCCommands;
+import es.um.redes.nanoChat.client.shell.NCCommand;
 import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
@@ -20,10 +20,7 @@ public class NCController {
 	private DirectoryConnector directoryConnector;	// Conector para enviar y recibir mensajes del directorio
 	private NCConnector ncConnector;				// Conector para enviar y recibir mensajes con el servidor de NanoChat
 	private NCShell shell;							// Shell para leer comandos de usuario de la entrada estándar
-	private NCCommands currentCommand;				// Último comando proporcionado por el usuario
-	private String nickname;						// Nick del usuario (si ya se ha registrado)
-	private String room;							// Sala de chat en la que se encuentra el usuario (si está en alguna)
-	//private String chatMessage;						// Mensaje enviado o por enviar al chat
+	private NCCommand currentCommand;				// Último comando proporcionado por el usuario
 	private InetSocketAddress serverAddress;		// Dirección de internet del servidor de NanoChat
 	private NCClientStatus clientStatus;			// Estado actual del cliente, de acuerdo con el autómata
 
@@ -41,156 +38,136 @@ public class NCController {
 		}
 		// Entramos en el bucle para pedirle al controlador que procese comandos del shell
 		// hasta que el usuario quiera salir de la aplicación.
-		while (!shouldQuit()) {
-			//Pedimos el comando al shell
-			shell.readGeneralCommand();
-			//Establecemos que el comando actual es el que ha obtenido el shell
-			currentCommand = shell.getCommand();
-			//Analizamos los posibles parámetros asociados al comando
-			String[] commandArgs = shell.getCommandArguments();
-			// Process a command (status PRE_CONNECTION)
-			switch (currentCommand) {
-			case NICK:
-				registerNickName(commandArgs[0]);
-			case QUIT:
-				break;
-			default:
-				System.out.println("* You can't perform that action, you must be registered");
-			}
-			// Change of state:
-			if (clientStatus == NCClientStatus.OUT_ROOM)
-				outRoomProcessing();
-		}
-		
-		//Cuando salimos tenemos que cerrar todas las conexiones y sockets abiertos
-		ncConnector.disconnect();	//TODO revisar jm		
-		directoryConnector.close();
-	}
-	
-	public void outRoomProcessing() {
-		while (!shouldQuit()) {
-			shell.readGeneralCommand();
-			currentCommand = shell.getCommand();
-			String[] commandArgs = shell.getCommandArguments();
-			try {
+		try {
+			while (clientStatus != NCClientStatus.QUIT) {
+				currentCommand = shell.readGeneralCommand();		// Read valid command 
+				String[] commandArgs = shell.getCommandArguments();	// and its arguments
+				// Process a command (status PRE_CONNECTION)
 				switch (currentCommand) {
-				case CREATE:
-					createRoom(commandArgs[0]);
-					break;
-				//case DM: //TODO
-					
-				case ENTER:
-					enterChat(commandArgs[0]);
-					break;			
-				case ROOMLIST:
-					getAndShowRooms();
+				case NICK:
+					registerNickName(commandArgs[0]);
 					break;
 				case QUIT:
+					clientStatus = NCClientStatus.QUIT;
 					break;
 				default:
-					System.out.println("* You can't use that command outside a room");
+					System.out.println("* You can't perform that action, you must be registered");
+					break;
 				}
-				// Possible change of state:
-				if (clientStatus == NCClientStatus.IN_ROOM)
-					inRoomProcessing();
-			} catch (IOException e) {
-				//TODO cortar comunicación or whatever
-				System.err.println("* There was an error with the connection.");
+				// Change of state:
+				if (clientStatus == NCClientStatus.OUT_ROOM)
+					outRoomProcessing();
+			}
+		} catch (IOException e) {
+			System.err.println("* There was a communication error. Finishing now...");
+		} finally {
+			ncConnector.disconnect();			
+		}
+	}
+	
+	public void outRoomProcessing() throws IOException {
+		while (clientStatus != NCClientStatus.QUIT) {
+			currentCommand = shell.readGeneralCommand();
+			String[] commandArgs = shell.getCommandArguments();
+			// Process a command (status OUTROOM)
+			switch (currentCommand) {
+			case CREATE:
+				createRoom(commandArgs[0]);
+				break;
+			//case DM: //TODO
+				//break;
+			case ENTER:
+				enterChat(commandArgs[0]);
+				break;			
+			case ROOMLIST:
+				getAndShowRooms();
+				break;
+			case QUIT:
+				clientStatus = NCClientStatus.QUIT;
+				break;
+			default:
+				System.err.println("* Received an outroom command from shell not listed in outRoomProcessing");
+				break;
+			}
+			// Possible change of state:
+			if (clientStatus == NCClientStatus.IN_ROOM) {
+				inRoomProcessing();
 			}
 		}
 	}
 	
-	public void inRoomProcessing() {
+	public void inRoomProcessing() throws IOException {
 		// Return condition: 
 		while (!shouldQuit() && clientStatus == NCClientStatus.IN_ROOM) {
-			shell.readChatCommand(ncConnector);
-			currentCommand = shell.getCommand();
+			currentCommand = shell.readChatCommand(ncConnector);
 			String[] commandArgs = shell.getCommandArguments();
-			try {
-				switch (currentCommand) {
-				//case DM: //TODO
-				case EXIT:
-					exitTheRoom();
-					break;
-				case INFO:
-					getAndShowInfo();
-					break;
-				case PROMOTE:
-					promote(commandArgs[0]);
-					break;
-				case KICK:
-					kick(commandArgs[0]);
-					break;
-				case RENAME:
-					renameRoom(commandArgs[0]);
-					break;
-				case SEND:
-					sendChatMessage(commandArgs[0]);
-					break;
-				case SOCKET_IN:
-					processIncommingMessage();
-					break;
-				default:
-					System.out.println("* You can't use that command inside a room");
-					break;
-				}
-			} catch (IOException e) {
-				//TODO cortar comunicación or whatever
-				System.err.println("* There was an error with the connection");
+			switch (currentCommand) {
+			//case DM: //TODO
+				//break;
+			case EXIT:
+				exitTheRoom();
+				break;
+			case INFO:
+				getAndShowInfo();
+				break;
+			case PROMOTE:
+				promote(commandArgs[0]);
+				break;
+			case KICK:
+				kick(commandArgs[0]);
+				break;
+			case RENAME:
+				renameRoom(commandArgs[0]);
+				break;
+			case SEND:
+				sendChatMessage(commandArgs[0]);
+				break;
+			case SOCKET_IN:
+				processIncommingMessage();
+				break;
+			default:
+				System.err.println("* Received an inroom command from shell not listed in inRoomProcessing");
+				break;
 			}
 		}
 	}
 	
 	//Método para procesar los mensajes recibidos del servidor mientras que el shell estaba esperando un comando de usuario
-	@SuppressWarnings("incomplete-switch")
-	private void processIncommingMessage() {				
-		try {
-			//Recibir el mensaje
-			NCMessage message = ncConnector.receiveMessage();
-			//TODO En función del tipo de mensaje, actuar en consecuencia
-			switch(message.getType()){
-			case NEW_DM: 
-				//System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
-			//(Ejemplo) En el caso de que fuera un mensaje de chat de broadcast mostramos la información de quién envía el mensaje y el mensaje en sí
-			case NEW_MESSAGE:
-				System.out.println(((NCTextMessage)message).getUser()+": "+((NCTextMessage)message).getMessage());//TODO Haz una conversión, no?
-				break;
-			case KICKED:
-				processKick();
-				break;
-			//case NOTIFICATION://TODO revisar jm
-				//processNotification(message);
-			} //TODO default?
-		} catch (IOException e) {
-			System.out.println("* There was an error receiving a new message");
-			e.printStackTrace();
-		}		
+	private void processIncommingMessage() throws IOException {
+		NCMessage message = ncConnector.receiveMessage();
+		// We treat different messages in a different manner
+		switch(message.getType()){
+		case NEW_DM: 
+			//System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
+		
+		case NEW_MESSAGE:
+			//(Example) If it's a new room message, we print the user and the message itself.
+			NCTextMessage textMess = (NCTextMessage)message;
+			System.out.println(textMess.getUser() + ": " + textMess.getMessage());//TODO Haz una conversión, no?
+			break;
+		case KICKED:
+			processKick();
+			break;
+		//case NOTIFICATION://TODO revisar jm
+			//processNotification(message);
+			//break;
+		} //TODO default? SI, con nota explicativa de por qué se da el fallo, aunque no se vaya  a dar.
 	}
 	
 	// Método para registrar el nick del usuario en el servidor de NanoChat
-	private void registerNickName(String name) {
-		try {
-			// Pedimos que se registre el nick (se comprobará si está duplicado)
-			if (ncConnector.registerNickname(name)) {
-				// Si el registro fue exitoso pasamos al siguiente estado del autómata
-				nickname = name;
-				System.out.println("* Your nickname is now " + nickname);
-				clientStatus = NCClientStatus.OUT_ROOM;
-				return;
-			}
-			//En este caso el nick ya existía
-			System.out.println("* The nickname is already registered. Try a different one.");			
-		} catch (IOException e) {
-			System.out.println("* There was an error registering the nickname");
-			//e.printStackTrace();
+	private void registerNickName(String name) throws IOException {
+		if (ncConnector.registerNickname(name)) {
+			System.out.println("* Your nickname is now " + name);
+			// A successful register causes a change in the automaton state
+			clientStatus = NCClientStatus.OUT_ROOM;
+			return;
 		}
+		System.out.println("* The nickname is already registered. Try a different one.");
 	}
 
 	//Método que solicita al servidor de NanoChat la lista de salas e imprime el resultado obtenido
-	private void getAndShowRooms() {
-		// Le pedimos al conector que obtenga la lista de salas ncConnector.getRooms()
+	private void getAndShowRooms() throws IOException {
 		Collection<NCRoomDescription> descriptions = ncConnector.getRooms();
-		// Una vez recibidas iteramos sobre la lista para imprimir información de cada sala
 		System.out.println("* There are currently " + descriptions.size() + " rooms:");
 		for (NCRoomDescription des : descriptions)
 			System.out.println(des.toPrintableString());
@@ -199,48 +176,38 @@ public class NCController {
 	// Process request of type create
 	private void createRoom(String roomName) throws IOException {
 		if (ncConnector.createRoom(roomName)) {
-			room = roomName;
-			System.out.println("* You created the room " + room + ". You are now inside.");
+			System.out.println("* You created the room " + roomName + ". You are now inside.");
 			clientStatus = NCClientStatus.IN_ROOM;
 			return;
-		}
-		System.out.println("* You cannot create a room called " + room +". Try another."); //TODO manejar casos nombre repetido y demás
+		}//TODO manejar casos que ofrece el servidor (nombre inválido, nombre repetido, etc)
+		System.out.println("* You cannot create a room called " + roomName +". Try another.");
 	}
 
 	// Método para tramitar la solicitud de acceso del usuario a una sala concreta
 	private void enterChat(String roomName) throws IOException {
-		// Se solicita al servidor la entrada en la sala correspondiente ncConnector.enterRoom()
 		if (ncConnector.enterRoom(roomName)) {
-			room = roomName;
-			// En caso contrario informamos que estamos dentro y seguimos
 			System.out.println("* You entered the room.");
-			// Cambiamos el estado del autómata para aceptar nuevos comandos
 			clientStatus = NCClientStatus.IN_ROOM;
 			return;
-		}
+		} //TODO manejar diferentes respuestas del servidor (como las de create)
 		// Si la respuesta es un rechazo entonces informamos al usuario
-		System.out.println("* The room doesn't exist or you cannot enter that room"); //TODO consider put smt if banned?
+		System.out.println("* The room doesn't exist or you cannot enter that room");
 	}
 
 	//Método para solicitar al servidor la información sobre una sala y para mostrarla por pantalla
 	private void getAndShowInfo() throws IOException {
-		// Pedimos al servidor información sobre la sala en concreto
 		NCRoomDescription des = ncConnector.getRoomInfo();
-		// Mostramos por pantalla la información
 		System.out.println(des.toPrintableString());
 	}
 	
 	private void processKick() {
-		room = null;
 		clientStatus = NCClientStatus.OUT_ROOM;
 		System.out.println("* You were kicked out of this room");
 	}
 
 	//Método para notificar al servidor que salimos de la sala
 	private void exitTheRoom() throws IOException {
-		// Mandamos al servidor el mensaje de salida
 		ncConnector.leaveRoom();
-		room = null;
 		clientStatus = NCClientStatus.OUT_ROOM;
 		System.out.println("* You are now out of the room");
 	}
@@ -249,7 +216,6 @@ public class NCController {
 		NCControlMessage serversAnswer = ncConnector.renameRoom(newName);	
 		switch(serversAnswer.getType()) {
 		case OK:
-			room = newName;
 			System.out.println("* The room name was changed. You are now in the room " + newName);
 			break;
 		case DENIED:
@@ -304,71 +270,78 @@ public class NCController {
 		String user = ((NCNotificationMessage) message).getUser();
 		String object = ((NCNotificationMessage) message).getObject();
 		NCMessageType action = ((NCNotificationMessage) message).getAction();
-		switch (action) {
+		switch (action) { //TODO anade default jm y pon syserr notifiacion no implementada en processNotification o algo
+		//aunque la situación no se pueda dar (ahora), no se sabe en el futuro
 			case ENTER:
-				System.out.println("* User "+user+" has entered the room");
+				System.out.println("* " + user + " has entered the room");
 				break;
 			case EXIT:
-				System.out.println("* User "+user+" has left the room");
+				System.out.println("* " + user + " has left the room");
 				break;
 			case RENAME:
-				room = object;
-				System.out.println("* Admin "+user+" change the room name to "+object);
+				System.out.println("* " + user + " changed the room name to " + object);
 				break;
 			case KICK:
-				System.out.println("* Admin "+user+" kicked the pleb "+object);
+				System.out.println("* " + user +" kicked out the pleb " + object);
 				break;
 			case PROMOTE:
-				System.out.println("* Now user "+object+" is a holder of the KICKSWORD, thanks to "+user);
+				System.out.println("* " + object + " is now a holder of the KICKSWORD, thanks to " + user);
 				break;
 		}
 	}
 	
 	//Método para enviar un mensaje al chat de la sala
-	private void sendChatMessage(String chatMessage) {
-		//Mandamos al servidor un mensaje de chat
-		try {
-			ncConnector.sendBroadcastMessage(chatMessage);
-		} catch (IOException e) {
-			System.out.println("* There was an error while you were sending your message");
-		}
+	private void sendChatMessage(String chatMessage) throws IOException {
+		ncConnector.sendBroadcastMessage(chatMessage);
 	}
 
-	// Método para obtener el servidor de NanoChat que nos proporcione el directorio
+	/**
+	 * Tries to get a server address from a directory.
+	 * This method must be called before attempting to connect to a chat server.
+	 * @param directoryHostname The hostname of the directory.
+	 * @return true if the operation was successful.
+	 */
 	public boolean getServerFromDirectory(String directoryHostname) {
-		//Inicializamos el conector con el directorio y el shell
 		System.out.println("* Connecting to the directory...");
-		//Intentamos obtener la dirección del servidor de NanoChat que trabaja con nuestro protocolo
 		try {
 			directoryConnector = new DirectoryConnector(directoryHostname);
 			serverAddress = directoryConnector.getServerForProtocol(PROTOCOL);
-		} catch (IOException e1) {
+		} catch (IOException e) {
 			serverAddress = null;
+		} finally {
+			if (directoryConnector != null) {
+				directoryConnector.close();
+			}
 		}
-		//Si no hemos recibido la dirección entonces nos quedan menos intentos
 		if (serverAddress == null) {
 			System.out.println("* Check your connection, the directory is not available.");		
 			return false;
 		}
+		System.out.println("* Got server from directory.");
 		return true;
 	}
-	
-	//Método para establecer la conexión con el servidor de Chat (a través del NCConnector)
+
+	/**
+	 * Connects to the chat server.
+	 * This method must be called after the controller has a valid address
+	 * (see getServerFromDirectory())
+	 * @return true if the connection to the server was successful.
+	 */
 	public boolean connectToChatServer() {
 		if (serverAddress == null) {
 			System.err.println("* Usage: Call getServerFromDirectory() first.");
 			return false;
 		}
 		try {
-			//Inicializamos el conector para intercambiar mensajes con el servidor de NanoChat (lo hace la clase NCConnector)
 			ncConnector = new NCConnector(serverAddress);
 		} catch (IOException e) {
 			System.out.println("* Check your connection, the chat server is not available.");
 			serverAddress = null;
 		}
-		//Si la conexión se ha establecido con éxito informamos al usuario y cambiamos el estado del autómata
+		
 		if (serverAddress != null) {
-			System.out.println("* Connected to "+serverAddress);
+			// If the connection was successful, we change the state of the automata to the starting state
+			System.out.println("* Connected to " + serverAddress);
 			clientStatus = NCClientStatus.PRE_REGISTRATION;
 			return true;
 		}
@@ -376,14 +349,13 @@ public class NCController {
 	}
 	
 
-	//Devuelve el comando actual introducido por el usuario
-	public NCCommands getCurrentCommand() {		
+	public NCCommand getCurrentCommand() {		
 		return currentCommand;
 	}
 
 	//Método que comprueba si el usuario ha introducido el comando para salir de la aplicación
 	public boolean shouldQuit() {
-		return currentCommand == NCCommands.QUIT;
+		return currentCommand == NCCommand.QUIT;
 	}
 
 }

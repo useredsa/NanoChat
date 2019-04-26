@@ -1,8 +1,8 @@
 package es.um.redes.nanoChat.client.shell;
 
-public enum NCCommands {
-	SOCKET_IN	(NCCommands.NON_USER, NCCommands.NON_USER),
-	INVALID		(NCCommands.NON_USER, NCCommands.NON_USER),
+public enum NCCommand {
+	SOCKET_IN	(NCCommand.NON_USER, NCCommand.NON_USER),
+	INVALID		(NCCommand.NON_USER, NCCommand.NON_USER),
 	NICK		("nick",	"to set the <nickname> in the server"),
 	ROOMLIST	("roomlist","provides a list of available rooms to chat"),
 	ENTER		("enter", 	"enter a particular <room>"),
@@ -23,15 +23,15 @@ public enum NCCommands {
 	private final String helpMessage;	// Command help message shown with the help command
 										// NON_USER means not to display
 	
-	private NCCommands (String name, String message) {
+	private NCCommand (String name, String message) {
 		this.name = name;
 		helpMessage = message;
 	}
 		
 	// Gets Command from string
-	public static NCCommands stringToCommand(String comStr) {
+	public static NCCommand stringToCommand(String comStr) {
 		// Search within commands for the string
-		for (NCCommands comm : NCCommands.values())
+		for (NCCommand comm : NCCommand.values())
 			if (comm.name.equals(comStr))
 				return comm;
 		// Or return invalid if no match was found
@@ -41,7 +41,7 @@ public enum NCCommands {
 	// Prints list of valid commands and the help message of each one.
 	public static void printCommandsHelp() {	//TODO poner mejor, de forma que se entiendan, sobre todo los que llevan dos campos y eso
 		System.out.println("List of commands:");
-		for (NCCommands comm : NCCommands.values())
+		for (NCCommand comm : NCCommand.values())
 			if (!comm.helpMessage.equals(NON_USER))
 				System.out.println(comm.name + " -- " + comm.helpMessage);
 	}

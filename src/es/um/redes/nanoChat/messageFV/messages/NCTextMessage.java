@@ -12,8 +12,8 @@ public class NCTextMessage implements NCMessage {
 	private final String user;
 	private final String text;
 	
-	public NCTextMessage(String user, String text) {
-		this.user = user;
+	public NCTextMessage(String username, String text) {
+		this.user = username;
 		this.text = text;
 	}
 	

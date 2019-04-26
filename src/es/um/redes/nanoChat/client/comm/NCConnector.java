@@ -9,7 +9,6 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 
-import es.um.redes.nanoChat.messageFV.InvalidFormat;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.*;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
@@ -37,12 +36,8 @@ public class NCConnector {
 	 * Aclaración:
 	 * El servidor no va a enviarnos mensajes con un formato inválido.
 	 * No es un problema suponer que el servidor funciona correctamente
-	 * y capturar las excepciones del tipo InvalidFormat al recibir un
-	 * paquete.
-	 * Con respecto al tratamiento, no hay que darle mucha importancia,
-	 * porque suponemos que no se va a aplicar; pero en cada sitio se
-	 * debería intentar devolver el valor que más cuadre si se diese un
-	 * error.
+	 * y obviar las excepciones de tipo InvalidFormat.
+	 * Para ello, utilizamos NCMessage.readFromSocketNoChecks(dis);
 	 */
 	
 	// Método para registrar el nick en el servidor. Nos informa sobre si la inscripción se hizo con éxito o no.
@@ -53,46 +48,26 @@ public class NCConnector {
 		// Escribimos el mensaje parseado en el flujo de salida, es decir, provocamos que se envíe por la conexión TCP
 		dos.writeUTF(message.encode());
 		// Leemos el mensaje recibido como respuesta por el flujo de entrada
-		try {
-			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			// Analizamos el mensaje para saber si está duplicado el nick (modificar el return en consecuencia)
-			return answer.getType() == NCMessageType.OK;			
-		} catch (InvalidFormat e) {
-			// The server is not gonna send a message with an invalid format
-			e.printStackTrace();
-			return false;
-		}
+		NCMessage answer = NCMessage.readFromSocketNoChecks(dis);
+		// Analizamos el mensaje para saber si está duplicado el nick (modificar el return en consecuencia)
+		return answer.getType() == NCMessageType.OK;
 	}
 	
 	//Método para obtener la lista de salas del servidor
-	public Collection<NCRoomDescription> getRooms() {
+	public Collection<NCRoomDescription> getRooms() throws IOException {
 		//Funcionamiento resumido: SND(GET_ROOMS) and RCV(ROOM_LIST)
 		NCControlMessage message = new NCControlMessage(NCMessageType.ROOMS_LIST);
-		try {	//TODO ejemplo de manejo de errores, probablemente no se haga en el usuario, pero lo de implosions mola
-			dos.writeUTF(message.encode());
-			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			return ((NCRoomListMessage) answer).getRoomsInfo();
-		} catch (IOException e) {
-			System.err.println("Problems writting or receiving a message.");
-			e.printStackTrace();
-			return Collections.emptyList();
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return null;
-		}
+		dos.writeUTF(message.encode());
+		NCMessage answer = NCMessage.readFromSocketNoChecks(dis);
+		return ((NCRoomListMessage) answer).getRoomsInfo();
 	}
 	
 	// Asks to create a room. If successful, automatically enters the room.
 	public boolean createRoom(String name) throws IOException {
 		NCCreateMessage mess = new NCCreateMessage(name);
 		dos.writeUTF(mess.encode());
-		try {
-			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			return answer.getType() == NCMessageType.OK;
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return false;
-		}
+		NCMessage answer = NCMessage.readFromSocketNoChecks(dis);
+		return answer.getType() == NCMessageType.OK;
 	}
 	
 	// Método para solicitar la entrada en una sala
@@ -100,46 +75,26 @@ public class NCConnector {
 		// Funcionamiento resumido: SND(ENTER_ROOM<room>) and RCV(IN_ROOM) or RCV(REJECT)
 		NCEnterMessage message = new NCEnterMessage(room);
 		dos.writeUTF(message.encode());
-		try {
-			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			return answer.getType() == NCMessageType.OK;
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return false;
-		}
+		NCMessage answer = NCMessage.readFromSocketNoChecks(dis);
+		return answer.getType() == NCMessageType.OK;
 	}
 	
 	public NCControlMessage renameRoom(String newName) throws IOException {
 		NCRenameMessage mess = new NCRenameMessage(newName);
 		dos.writeUTF(mess.encode());
-		try {
-			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return new NCControlMessage(NCMessageType.IMPOSSIBLE);
-		}
+		return (NCControlMessage) NCMessage.readFromSocketNoChecks(dis);
 	}
 	
 	public NCControlMessage promote(String user) throws IOException {
 		NCPromoteMessage mess = new NCPromoteMessage(user);
 		dos.writeUTF(mess.encode());
-		try {
-			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return new NCControlMessage(NCMessageType.IMPOSSIBLE);
-		}
+		return (NCControlMessage) NCMessage.readFromSocketNoChecks(dis);
 	}
 	
 	public NCControlMessage kick(String user) throws IOException {
 		NCKickMessage mess = new NCKickMessage(user);
 		dos.writeUTF(mess.encode());
-		try {
-			return (NCControlMessage) NCMessage.readMessageFromSocket(dis);
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return new NCControlMessage(NCMessageType.IMPOSSIBLE);
-		}
+		return (NCControlMessage) NCMessage.readFromSocketNoChecks(dis);
 	}
 	
 	//Método para salir de una sala
@@ -169,12 +124,7 @@ public class NCConnector {
 	
 	//Metodo para recibir mensajes de chat de una sala
 	public NCMessage receiveMessage() throws IOException { 
-		try {
-			return NCMessage.readMessageFromSocket(dis);
-		} catch (InvalidFormat e) { 
-			e.printStackTrace();
-			return null; //TODO ver si cambiar
-		}
+		return NCMessage.readFromSocketNoChecks(dis);
 	}
 	
 	//Método para pedir la descripción de una sala
@@ -184,14 +134,9 @@ public class NCConnector {
 		NCControlMessage request = new NCControlMessage(NCMessageType.INFO);
 		dos.writeUTF(request.encode());
 		// Recibimos el mensaje de respuesta
-		try {
-			NCMessage answer = NCMessage.readMessageFromSocket(dis);
-			// Devolvemos la descripción contenida en el mensaje
-			return ((NCRoomInfoMessage) answer).getRoomDescription();
-		} catch (InvalidFormat e) {
-			e.printStackTrace();
-			return NCRoomDescription.invalidDescription();
-		}
+		NCMessage answer = NCMessage.readFromSocketNoChecks(dis);
+		// Devolvemos la descripción contenida en el mensaje
+		return ((NCRoomInfoMessage) answer).getRoomDescription();
 	}
 	
 	// Método para cerrar la comunicación con la sala

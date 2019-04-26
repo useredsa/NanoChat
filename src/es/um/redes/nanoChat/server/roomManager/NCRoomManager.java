@@ -9,11 +9,11 @@ public interface NCRoomManager {
 	
 	public abstract String getRoomName();
 	//Método para registrar a un usuario u en una sala (se anota también su socket de comunicación)
-	public abstract boolean enter(String u, NCServerThread th);
+	public abstract boolean enter(String user, NCServerThread userThread) throws IOException;
 	//Método para eliminar un usuario de una sala
-	public abstract void exit(String u);
+	public abstract void exit(String user);
 	//Método para hacer llegar un mensaje enviado por un usuario u
-	public abstract void broadcastMessage(String u, String message) throws IOException;
+	public abstract void broadcastMessage(String user, String message);
 	//Método para devolver la descripción del estado actual de la sala
 	public abstract NCRoomDescription getDescription();
 	//Método para devolver el número de usuarios conectados a una sala
@@ -59,5 +59,5 @@ public interface NCRoomManager {
 	 * @param kicked The user being kicked
 	 * @return 0 if the operation was successfully performed. For other return values, check the description.
 	 */
-	public abstract NCControlMessage kick(String admin, String kicked);
+	public abstract NCControlMessage kick(String user, String kicked);
 }

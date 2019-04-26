@@ -22,7 +22,7 @@ public class NCRoomDescription {
 	//Método que devuelve una representación de la Descripción lista para ser impresa por pantalla
 	public String toPrintableString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("Room Name: "+ name + "\t Members (" + members.size() + ") : ");
+		sb.append("Room Name: "+ name + "\t Members (" + members.size() + "): ");
 		for (String member: members) {
 			sb.append(member+" ");
 		}

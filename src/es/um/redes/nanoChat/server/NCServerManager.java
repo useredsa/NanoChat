@@ -1,83 +1,128 @@
 package es.um.redes.nanoChat.server;
 
-import java.net.Socket;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 import es.um.redes.nanoChat.server.roomManager.NCBasicRoom;
+import es.um.redes.nanoChat.server.roomManager.NCGlobalRoom;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 import es.um.redes.nanoChat.server.roomManager.NCRoomManager;
 
 /**
- * Esta clase contiene el estado general del servidor (sin la lógica relacionada con cada sala particular)
+ * This class manages the server's main resources, which are:
+ * <ul>
+ * <li> Users </li>
+ * <li> Rooms </li>
+ * </ul>
+ * The creation or deletion of common resources is done using this class.
+ * However, the interaction with the rooms can be done via their NCRoomManager.
  */
 public class NCServerManager {
-	
-	//TODO quitar estos datos para la primera habitación
-	//Primera habitación del servidor
-	final static byte INITIAL_ROOM = 'A';
-	final static String ROOM_PREFIX = "Room";
-	private HashSet<String> users = new HashSet<String>(); 									// Registered nicknames
-	private HashMap<String, NCRoomManager> rooms = new HashMap<String, NCRoomManager>();	// Available Rooms (and their room managers)
-	//TODO El nombre de la sala es una información que ya se encuentra en el NCRoomManager, así que no deberíamos asociarlo de esta manera,
-	// sino obtenerlo de ahí. Pienso que hacerlo así es más propenso a que se produzca un error porque a alguien se le olvide algo al 
-	// renombrar una sala o similares.
-	
+	// Prefer concurrent collections and atomic operations instead of synchronized methods
+	// to reduce the server's load.
+	/** Names of the global rooms in the server */
+	private final static String[] GLOBAL_ROOMS = {"General", "PublicBar"};
+	/** Registered names */
+	private ConcurrentHashMap<String, Boolean> users; // used as set because concurrent set does not exist
+	/** Available Rooms (and their room managers) */
+	private ConcurrentHashMap<String, NCRoomManager> rooms;	
 	
 	NCServerManager() {
+		users = new ConcurrentHashMap<String, Boolean>();
+		rooms = new ConcurrentHashMap<String, NCRoomManager>();
+		for (String roomName : GLOBAL_ROOMS) {
+			rooms.put(roomName, new NCGlobalRoom(this, roomName));
+		}
+	}
+	
+	/**
+	 * Attempts to register a client in the server. </br>
+	 * This method should be called by NCServerThread when trying to
+	 * register. If there is another user with the same username in
+	 * the server the register will be unsuccessful and the function
+	 * will return false.
+	 * If successful, the function will return true.
+	 * @param username the username 
+	 * @param th the NCServerThread attending this client
+	 * @return The new NCUser if the user was registered. null otherwise.
+	 */
+	public boolean addUser(String username, NCServerThread th) {
+		// The following call is atomic, don't touch it unless you know what you are doing:
+		return users.putIfAbsent(username, true) == null;
+	}
+	
+	/**
+	 * Deletes a user from the server, freeing its username.
+	 * This method should be called by NCServerThread when the user disconnects.
+	 * @param user the disconnected user.
+	 */
+	public void removeUser(String user) {
+		users.remove(user);
 	}
 	
 	//Devuelve la descripción de las salas existentes
-	public synchronized ArrayList<NCRoomDescription> getRoomList() {
+	public ArrayList<NCRoomDescription> getRoomList() {
 		// Pregunta a cada RoomManager cuál es la descripción actual de su sala
 		// Añade la información al ArrayList
 		ArrayList<NCRoomDescription> info_rooms = new ArrayList<NCRoomDescription>();
 		for(String s : rooms.keySet()) {
 			info_rooms.add(rooms.get(s).getDescription());
 		}
-		return info_rooms; //TODO ver si es necesario devolver unmodifiable
+		return info_rooms;
 	}
 	
-	
-	//Intenta registrar al usuario en el servidor.
-	public synchronized boolean addUser(String user) {
-		// Devuelve true si no hay otro usuario con su nombre
-		return users.add(user);
+	/**
+	 * Process request from a user to create room. </br>
+	 * If a room with the same name already existed, the function
+	 * returns null. Otherwise, the room is created and the function
+	 * returns it's NCRoomManager.
+	 * @param room the name of the new room
+	 * @param user the creator of the room
+	 * @return The new room's NCRoomManager or null if there was a room with
+	 * the same name.
+	 * @throws IOException
+	 */
+	public NCRoomManager createRoom(String room, String user, NCServerThread userThread) throws IOException {
+		NCRoomManager rm = new NCBasicRoom(this, room, user, userThread);
+		// This function is atomic, don't touch it unless you know what you are doing.
+		NCRoomManager check = rooms.putIfAbsent(room, rm);
+		if (check == null)
+			return rm;
+		return null;
 	}
 	
-	//Elimina al usuario del servidor
-	public synchronized void removeUser(String user) {
-		// Elimina al usuario del servidor
-		users.remove(user);
-	}
-	
-	// Process request from user u to create room
-	public NCRoomManager createRoom(String room, String u, NCServerThread th) {
-		// Check a room with the same name doesn't exist
-		if (rooms.containsKey(room))
-			return null;
-		// Create a new BasicRoom and register its RoomManager
-		NCRoomManager rm = new NCBasicRoom(this, room, u, th);
-		rooms.put(rm.getRoomName(), rm);
-		return rm;
-	}
-	
-	// Llamada por las salas
-	public synchronized boolean renameRoom(String oldName, String newName) {
-		if (rooms.containsKey(newName))
-			return false;
-		rooms.put(newName, rooms.get(oldName));
-		rooms.remove(oldName);
-		return true;
-	}
-	
-	// Process request from user u to enter room
-	public synchronized NCRoomManager getRoomManager(String room) {
-		// Check the room exists
-		if (!rooms.containsKey(room))
-			return null; //TODO change
-		// Try to register user and return the RoomManager
+	public NCRoomManager getRoomManager(String room) {
 		return rooms.get(room); 
+	}
+	
+	/**
+	 * This function is called by the NCRoomManager when it decides
+	 * that the room must be deleted. In the future, this functionality
+	 * may be added to users, but it would use a different function.
+	 * @param room the room name
+	 */
+	public void deleteRoom(String room) {
+		rooms.remove(room);
+	}
+	
+	/**
+	 * This function is called by the NCRoomManager when it tries
+	 * to rename the room. </br>
+	 * The method returns true when the server's manager updates it's references.
+	 * If another room has the new name at the moment of the call, then the method
+	 * will return false and the NCRoomManager must not change its name.
+	 * @param oldName The previous name associated with the NCRoomManager.
+	 * @param newName The new name.
+	 * @return true if the NCRoomManager is allowed to change its name to newName.
+	 */
+	public boolean renameRoom(String oldName, String newName) {
+		// The following call is atomic, don't touch it unless you know what you are doing.
+		NCRoomManager check = rooms.putIfAbsent(newName, rooms.get(oldName));
+		if (check == null) {
+			rooms.remove(oldName);
+			return true;
+		}
+		return false;
 	}
 }
