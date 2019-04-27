@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 
+import es.um.redes.nanoChat.messageFV.InvalidFormat;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.*;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
@@ -111,13 +112,15 @@ public class NCConnector {
 	
 	//IMPORTANTE!!
 	//Es necesario implementar métodos para recibir y enviar mensajes de chat a una sala
-	//TODO revisar jm
+	
 	//Metodo para mandar un DM a una persona 
-	public void sendDM(String receiver, String text) throws IOException{
-		//dos.writeUTF(new NCDMMessage(NCMessageOp.DM, receiver, text).encode()); //TODO mensaje dm no implementado
+	public NCControlMessage sendDirect(String receiver, String message) throws IOException {
+		NCDirectMessage send = new NCDirectMessage(receiver, message);
+		dos.writeUTF(send.encode());
+		return (NCControlMessage) NCMessage.readFromSocketNoChecks(dis);
 	}
 	//Metodo para mandar un mensaje a toda la sala de chat
-	public void sendBroadcastMessage(String text) throws IOException{ //TODO me gusta la palabra broadcast o roomMessage, probablemente cambie el send
+	public void sendBroadcast(String text) throws IOException{
 		NCSendMessage mess = new NCSendMessage(text); 
 		dos.writeUTF(mess.encode());
 	}

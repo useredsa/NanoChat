@@ -1,5 +1,6 @@
 package es.um.redes.nanoChat.server;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,11 +26,14 @@ public class NCServerManager {
 	private final static String[] GLOBAL_ROOMS = {"General", "PublicBar"};
 	/** Registered names */
 	private ConcurrentHashMap<String, Boolean> users; // used as set because concurrent set does not exist
+	/** */
+	private ConcurrentHashMap<String, NCServerThread> connections;
 	/** Available Rooms (and their room managers) */
 	private ConcurrentHashMap<String, NCRoomManager> rooms;	
 	
 	NCServerManager() {
 		users = new ConcurrentHashMap<String, Boolean>();
+		connections = new ConcurrentHashMap<String, NCServerThread>();
 		rooms = new ConcurrentHashMap<String, NCRoomManager>();
 		for (String roomName : GLOBAL_ROOMS) {
 			rooms.put(roomName, new NCGlobalRoom(this, roomName));
@@ -49,7 +53,12 @@ public class NCServerManager {
 	 */
 	public boolean addUser(String username, NCServerThread th) {
 		// The following call is atomic, don't touch it unless you know what you are doing:
-		return users.putIfAbsent(username, true) == null;
+		//TODO yep i dont know what im doing, sorry but not sorry, im doing my f***** job
+		if(users.putIfAbsent(username, true) == null) {
+				connections.put(username,th);
+			return true;
+		}
+		return false;	
 	}
 	
 	/**
@@ -59,6 +68,7 @@ public class NCServerManager {
 	 */
 	public void removeUser(String user) {
 		users.remove(user);
+		connections.remove(user);	//TODO revisar jm
 	}
 	
 	//Devuelve la descripción de las salas existentes
@@ -124,5 +134,17 @@ public class NCServerManager {
 			return true;
 		}
 		return false;
+	}
+	
+	public DataOutputStream getConnectionWith(String user) {
+		try {
+			NCServerThread hilo = connections.get(user);
+			if(hilo != null)
+				return new DataOutputStream(hilo.getSocket().getOutputStream());
+			return null;
+		} catch (IOException e) {
+			//e.printStackTrace();
+			return null; //TODO solucionar esto de una manera mas agradable para el que pida la conexion
+		}
 	}
 }

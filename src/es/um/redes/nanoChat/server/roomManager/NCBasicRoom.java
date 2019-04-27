@@ -42,23 +42,20 @@ public class NCBasicRoom implements NCRoomManager {
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action) {
-		//sendNotification(user, action, "null");
+		sendNotification(user, action, "4J4Yt-2n?do032er3px*olf56=20");
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action, String object)  {
-		//if (object == null) object = "null";
-		/*try {
+		//if (object == null) object = "4J4Yt-2n?do032er3px*olf56=20";
+		try {
 			for(String e : members.keySet()) {
-				if (!e.equals(user) || (!e.equals(object))) {//object != null && 
-					DataOutputStream dos;
-					dos = new DataOutputStream(members.get(e).getSocket().getOutputStream()); //TODO preguntar oscar (concurrencia?)
-					dos.writeUTF(new NCNotificationMessage(user,action,object).encode());
+				if (e != user && e != object) {
+					members.get(e).dos.writeUTF(new NCNotificationMessage(user,action,object).encode()); 
 				}
 			}
 		} catch (IOException e1) {
 			System.err.println("* An error ocurred while notifying in room: "+roomName);
-			//e1.printStackTrace();
-		}*/
+		}
 	}
 	
 	@Override
@@ -74,11 +71,12 @@ public class NCBasicRoom implements NCRoomManager {
 	@Override
 	public synchronized void exit(String user) throws IOException {
 		admins.remove(user);
-		UserInfo info = members.remove(user);
-		if (info != null) {
+		//UserInfo info = 
+		members.remove(user);
+		sendNotification(user, NCMessageType.EXIT);
+		/*if (info != null) {
 			info.dos.close();
-			sendNotification(user, NCMessageType.EXIT);
-		}
+		}*/
 		if (members.isEmpty()) {
 			serverManager.deleteRoom(roomName);
 			deleted = true;
@@ -92,7 +90,7 @@ public class NCBasicRoom implements NCRoomManager {
 				try {
 					entry.getValue().dos.writeUTF(new NCTextMessage(user, message).encode());
 				} catch (IOException e) {
-					System.out.println("Could not write to user " + entry.getKey() + " from room " + roomName);
+					System.out.println("* Could not write to user " + entry.getKey() + " from room " + roomName); //TODO habría que informar al emisor?
 				}
 			}
 		}
@@ -109,7 +107,7 @@ public class NCBasicRoom implements NCRoomManager {
 			if (serverManager.renameRoom(roomName, newName)) {
 				// The operation can be performed
 				this.roomName = newName;
-				//sendNotification(user, NCMessageType.RENAME, newName); //TODO jm
+				sendNotification(user, NCMessageType.RENAME, newName); 
 				return new NCControlMessage(NCMessageType.OK);				
 			} else {
 				// There's another room with the newName
@@ -128,7 +126,7 @@ public class NCBasicRoom implements NCRoomManager {
 				if (!hasRights(promoted)) {
 					// The operation can be performed
 					admins.add(promoted); 
-					//sendNotification(user, NCMessageType.PROMOTE, promoted);
+					sendNotification(user, NCMessageType.PROMOTE, promoted);
 					return new NCControlMessage(NCMessageType.OK);
 				} else {
 					// The target already has rights

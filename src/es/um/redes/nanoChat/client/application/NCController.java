@@ -10,8 +10,10 @@ import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCDirectMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCNotificationMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCSecretMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
 
@@ -40,7 +42,7 @@ public class NCController {
 		// hasta que el usuario quiera salir de la aplicación.
 		try {
 			while (clientStatus != NCClientStatus.QUIT) {
-				currentCommand = shell.readGeneralCommand();		// Read valid command 
+				currentCommand = shell.readGeneralCommand(ncConnector);		// Read valid command //TODO jm
 				String[] commandArgs = shell.getCommandArguments();	// and its arguments
 				// Process a command (status PRE_CONNECTION)
 				switch (currentCommand) {
@@ -67,15 +69,16 @@ public class NCController {
 	
 	public void outRoomProcessing() throws IOException {
 		while (clientStatus != NCClientStatus.QUIT) {
-			currentCommand = shell.readGeneralCommand();
+			currentCommand = shell.readGeneralCommand(ncConnector);//TODO jm
 			String[] commandArgs = shell.getCommandArguments();
 			// Process a command (status OUTROOM)
 			switch (currentCommand) {
 			case CREATE:
 				createRoom(commandArgs[0]);
 				break;
-			//case DM: //TODO
-				//break;
+			case DM: //TODO revisar jm
+				sendDirectMessage(commandArgs[0], commandArgs[1]);
+				break;
 			case ENTER:
 				enterChat(commandArgs[0]);
 				break;			
@@ -84,6 +87,11 @@ public class NCController {
 				break;
 			case QUIT:
 				clientStatus = NCClientStatus.QUIT;
+				break;
+			case SOCKET_IN://TODO revisar jm
+				processIncomingMessage();
+			//case NEW_DM: 
+				//System.out.println(((NCDirectMessage) message).getUser()+" [DM]: "+((NCDirectMessage)message).getText());
 				break;
 			default:
 				System.err.println("* Received an outroom command from shell not listed in outRoomProcessing");
@@ -102,8 +110,9 @@ public class NCController {
 			currentCommand = shell.readChatCommand(ncConnector);
 			String[] commandArgs = shell.getCommandArguments();
 			switch (currentCommand) {
-			//case DM: //TODO
-				//break;
+			case DM: //TODO revisar jm
+				sendDirectMessage(commandArgs[0], commandArgs[1]);
+				break;
 			case EXIT:
 				exitTheRoom();
 				break;
@@ -123,7 +132,7 @@ public class NCController {
 				sendChatMessage(commandArgs[0]);
 				break;
 			case SOCKET_IN:
-				processIncommingMessage();
+				processIncomingMessage();
 				break;
 			default:
 				System.err.println("* Received an inroom command from shell not listed in inRoomProcessing");
@@ -133,25 +142,28 @@ public class NCController {
 	}
 	
 	//Método para procesar los mensajes recibidos del servidor mientras que el shell estaba esperando un comando de usuario
-	private void processIncommingMessage() throws IOException {
+	private void processIncomingMessage() throws IOException {
 		NCMessage message = ncConnector.receiveMessage();
 		// We treat different messages in a different manner
 		switch(message.getType()){
+		case NOTIFICATION:
+			processNotification(message);
+			break;
 		case NEW_DM: 
-			//System.out.println(((NCTextMessage)message).getUser()+" [DM]: "+((NCTextMessage)message).getText());
-		
+			System.out.println(((NCSecretMessage)message).getUser() +" [DM]: "+((NCSecretMessage)message).getText());
+			break;
 		case NEW_MESSAGE:
 			//(Example) If it's a new room message, we print the user and the message itself.
-			NCTextMessage textMess = (NCTextMessage)message;
-			System.out.println(textMess.getUser() + ": " + textMess.getMessage());//TODO Haz una conversión, no?
+			System.out.println(((NCTextMessage)message).getUser() + ": " + ((NCTextMessage)message).getMessage());
 			break;
 		case KICKED:
 			processKick();
 			break;
-		//case NOTIFICATION://TODO revisar jm
-			//processNotification(message);
-			//break;
-		} //TODO default? SI, con nota explicativa de por qué se da el fallo, aunque no se vaya  a dar.
+		default:
+			//TODO con nota explicativa de por qué se da el fallo, aunque no se vaya  a dar.
+			System.err.println("* Received an unexpected type of incoming message");
+			break;
+		} 
 	}
 	
 	// Método para registrar el nick del usuario en el servidor de NanoChat
@@ -235,7 +247,7 @@ public class NCController {
 		NCControlMessage serversAnswer = ncConnector.promote(user);
 		switch(serversAnswer.getType()) {
 		case OK:
-			System.out.println("* You made " + user + " an administrator.");
+			System.out.println("* You made " + user + " a new holder of the KICKSWORD.");
 			break;
 		case DENIED:
 			System.out.println("* You are not allowed to promote anyone to administrator in this room.");
@@ -270,8 +282,7 @@ public class NCController {
 		String user = ((NCNotificationMessage) message).getUser();
 		String object = ((NCNotificationMessage) message).getObject();
 		NCMessageType action = ((NCNotificationMessage) message).getAction();
-		switch (action) { //TODO anade default jm y pon syserr notifiacion no implementada en processNotification o algo
-		//aunque la situación no se pueda dar (ahora), no se sabe en el futuro
+		switch (action) { 
 			case ENTER:
 				System.out.println("* " + user + " has entered the room");
 				break;
@@ -287,12 +298,32 @@ public class NCController {
 			case PROMOTE:
 				System.out.println("* " + object + " is now a holder of the KICKSWORD, thanks to " + user);
 				break;
+			default:
+				System.err.println("* A wild, not yet implemented, notification appears, be aware!"); 
+				break;
 		}
 	}
 	
 	//Método para enviar un mensaje al chat de la sala
 	private void sendChatMessage(String chatMessage) throws IOException {
-		ncConnector.sendBroadcastMessage(chatMessage);
+		ncConnector.sendBroadcast(chatMessage);
+	}
+	//Método para enviar un mensaje directo a un usuario registrado en el servidor
+	private void sendDirectMessage(String receiver, String text) throws IOException { //TODO revisar jm
+		NCControlMessage answer = (NCControlMessage) ncConnector.sendDirect(receiver, text);
+		switch (answer.getType()) {
+			case OK:
+				break;
+			case DENIED:
+				System.out.println("* The user "+receiver+" is not logged into the server");
+				break;
+			case IMPOSSIBLE:
+				System.out.println("* You can't do that ");
+				break;
+			default:
+				System.out.println("* An error occurred while trying to contact with "+receiver);
+				break;
+		}
 	}
 
 	/**

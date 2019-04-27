@@ -8,6 +8,7 @@ import java.util.Map;
 
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
+import es.um.redes.nanoChat.messageFV.messages.NCNotificationMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCTextMessage;
 import es.um.redes.nanoChat.server.NCServerManager;
 import es.um.redes.nanoChat.server.NCServerThread;
@@ -25,19 +26,43 @@ public class NCGlobalRoom implements NCRoomManager {
 		members = new HashMap<String, DataOutputStream>();
 	}
 	
+	private synchronized void sendNotification(String user, NCMessageType action) {
+		sendNotification(user, action, "4J4Yt-2n?do032er3px*olf56=20");
+	}
+	
+	private synchronized void sendNotification(String user, NCMessageType action, String object)  {
+		//if (object == null) object = "4J4Yt-2n?do032er3px*olf56=20";
+		try {
+			for(String e : members.keySet()) {
+				if (e != user && e != object) {
+					members.get(e).writeUTF(new NCNotificationMessage(user,action,object).encode());
+				}
+			}
+		} catch (IOException e1) {
+			System.err.println("* An error ocurred while notifying in room: "+roomName);
+		}
+	}
+	
 	@Override
 	public synchronized boolean enter(String user, NCServerThread userThread) throws IOException{
 		if (members.containsKey(user))
 			return false;
 		members.put(user, new DataOutputStream(userThread.getSocket().getOutputStream()));
+		sendNotification(user, NCMessageType.ENTER);
 		return true;
 	}
 	
 	@Override
 	public synchronized void exit(String user) {
-		DataOutputStream dos = members.remove(user);
-		if (dos != null)
-			dos.close();
+		//DataOutputStream dos =; 
+		members.remove(user);
+		sendNotification(user, NCMessageType.EXIT);
+		/*if (dos != null)
+			try {
+				dos.close();
+			} catch (IOException e) {
+				System.out.println("* An error ocurred while disconnecting user "+user+" from room "+roomName);
+			}*/
 	}
 
 	@Override 
@@ -47,7 +72,7 @@ public class NCGlobalRoom implements NCRoomManager {
 				try {
 					entry.getValue().writeUTF(new NCTextMessage(user, message).encode());
 				} catch (IOException e) {
-					System.out.println("Could not write to user " + entry.getKey() + " from room " + roomName);
+					System.out.println("* Could not write to user " + entry.getKey() + " from room " + roomName);
 				}
 			}
 		}

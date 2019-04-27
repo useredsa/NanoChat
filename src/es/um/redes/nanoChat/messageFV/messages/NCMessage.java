@@ -18,8 +18,8 @@ public interface NCMessage {
 		switch (op) {
 		case CREATE:
 			return NCCreateMessage.decode(dec);
-		//case DM: //TODO
-			
+		case DM:
+			return NCDirectMessage.decode(dec);
 		case ENTER:
 			return NCEnterMessage.decode(dec);
 		case INVALID_CODE:
@@ -28,10 +28,8 @@ public interface NCMessage {
 			return NCKickMessage.decode(dec);
 		case NOTIFICATION:
 			return NCNotificationMessage.decode(dec);
-		//case NEW_DM: //TODO
-			
-		//case NEW_FILE: //TODO
-			
+		case NEW_DM: //TODO lo mas seguro es que no haga falta
+			return NCSecretMessage.decode(dec);
 		case NEW_MESSAGE:
 			return NCTextMessage.decode(dec);
 		case PROMOTE:
@@ -46,8 +44,6 @@ public interface NCMessage {
 			return NCRoomListMessage.decode(dec);
 		case SEND:
 			return NCSendMessage.decode(dec);
-		//case UPLOAD: //TODO
-			
 		case OK:
 		case DENIED:
 		case IMPOSSIBLE:

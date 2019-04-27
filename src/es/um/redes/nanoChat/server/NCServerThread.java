@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import es.um.redes.nanoChat.client.application.NCController;
 import es.um.redes.nanoChat.messageFV.InvalidFormat;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.*;
@@ -19,7 +20,7 @@ import es.um.redes.nanoChat.server.roomManager.NCRoomManager;
 public class NCServerThread extends Thread {
 	/** Server's manager (controls server's main resources, like users, rooms...) */
 	private NCServerManager serverManager = null;
-	/** Username of the client (once registered) */
+	/** User name of the client (once registered) */
 	String user = null;
 	/** Client's socket */
 	private final Socket socket;
@@ -169,8 +170,17 @@ public class NCServerThread extends Thread {
 			NCRoomListMessage answer = new NCRoomListMessage(rooms);
 			dos.writeUTF(answer.encode());
 			break;
-		//TODO DM:
-			
+		case DM:
+			String receiver = ((NCDirectMessage)message).getUser();
+			if(!receiver.equals(user)) {
+				String text = ((NCDirectMessage)message).getText();
+				DataOutputStream connection = serverManager.getConnectionWith(receiver);
+				if(connection != null) {
+					connection.writeUTF(new NCSecretMessage(user,text).encode());
+					dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
+				}else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
+			}else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
+			break;
 		case CREATE:
 			String roomName = ((NCCreateMessage) message).getRoomName();
 			roomManager = serverManager.createRoom(roomName, user, this);
@@ -219,9 +229,17 @@ public class NCServerThread extends Thread {
 		case SEND:
 			roomManager.broadcastMessage(user, ((NCSendMessage) message).getText()); 
 			break;			
-		//case DM: //TODO
-			//roomManager.sendMessage(user, ((NCTextMessage) message).getUser(), ((NCTextMessage) message).getText());
-			//break;
+		case DM: //TODO
+			String receiver = ((NCDirectMessage)message).getUser();
+			if(!receiver.equals(user)) {
+				String text = ((NCDirectMessage)message).getText();
+				DataOutputStream connection = serverManager.getConnectionWith(receiver);
+				if(connection != null) {
+					connection.writeUTF(new NCSecretMessage(user,text).encode());
+					dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
+				}else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
+			}else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
+			break;
 		case EXIT:
 			mustExitRoom = true;
 			break;

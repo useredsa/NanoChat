@@ -12,7 +12,7 @@ public enum NCMessageType {
 	ENTER("Enter"), 
 	INFO("Get info"), 
 	PROMOTE("Promote"),
-	KICK("RICKROLL"),				// Un poquito de gracia :p
+	KICK("RICKROLL"),				// Un poquito de gracia :P
 	SEND("Send"), 
 	DM("Send DM"), 
 	EXIT("Exit room"), 
@@ -27,7 +27,7 @@ public enum NCMessageType {
 	ROOM_INFO("Room info"),
 	KICKED("YOU GOT RICKROLLED"), 	// Un poquito de gracia :P 
 	NEW_MESSAGE("New text message"), 
-	NEW_DM("New DM"),
+	NEW_DM("New DM"), //TODO revisar jm
 	NOTIFICATION("New Notification");
 	
 	private final String messageText;	// Text that appears in the Field-Value encoding 

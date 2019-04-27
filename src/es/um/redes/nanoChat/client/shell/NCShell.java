@@ -32,10 +32,10 @@ public class NCShell {
 	}
 
 	//Espera hasta obtener un comando válido entre los comandos existentes
-	public NCCommand readGeneralCommand() {
+	public NCCommand readGeneralCommand(NCConnector ncclient) {
 		boolean validArgs;
 		do {
-			commandArgs = readGeneralCommandFromStdIn();
+			commandArgs = readGeneralCommandFromStdIn(ncclient);
 			//si el comando tiene parámetros hay que validarlos
 			validArgs = validateCommandArguments(commandArgs);
 		} while(!validArgs);
@@ -43,18 +43,50 @@ public class NCShell {
 	}
 
 	//Usa la entrada estándar para leer comandos y procesarlos
-	private String[] readGeneralCommandFromStdIn() {
+	private String[] readGeneralCommandFromStdIn(NCConnector ncclient) { //TODO revisar jm
 		String[] args = new String[0];
 		Vector<String> vargs = new Vector<String>();
 		while (true) {
 			System.out.print("(nanoChat) ");
-			//obtenemos la línea tecleada por el usuario
+			/*//obtenemos la línea tecleada por el usuario
 			String input = reader.nextLine();
 			StringTokenizer st = new StringTokenizer(input);
 			//si no hay ni comando entonces volvemos a empezar
 			if (st.hasMoreTokens() == false) {
 				continue;
+			}*/
+			//TODO revisar jm
+			//Utilizamos un BufferedReader en lugar de un Scanner porque no podemos bloquear la entrada
+			BufferedReader standardInput = new BufferedReader(new InputStreamReader(System.in));
+			boolean blocked = true; 
+			String input ="";
+			//Estamos esperando comando o mensaje entrante
+			while (blocked) {
+				try {
+					if (ncclient.isDataAvailable()) {
+						//Si el flujo de entrada tiene datos entonces el comando actual es SOCKET_IN y debemos salir
+						System.out.println("* Message received from server...");
+						command = NCCommand.SOCKET_IN;
+						return null;
+					}
+					else
+						//Analizamos si hay datos en la entrada estándar (el usuario tecleó INTRO)
+					if (standardInput.ready()) {
+						input = standardInput.readLine();			
+						blocked = false;
+					}
+					//Puesto que estamos sondeando las dos entradas de forma continua, esperamos para evitar un consumo alto de CPU
+					TimeUnit.MILLISECONDS.sleep(50);
+				} catch (IOException | InterruptedException e) {
+					command = NCCommand.INVALID;
+					return null;
+				}				
 			}
+			//Si el usuario tecleó un comando entonces procedemos de igual forma que hicimos antes para los comandos generales
+			StringTokenizer st = new StringTokenizer(input);
+			if (st.hasMoreTokens() == false) {
+				continue;
+			}//TODO jm
 			//traducimos la cadena del usuario en el código de comando correspondiente
 			command = NCCommand.stringToCommand(st.nextToken());
 			//Dependiendo del comando...
@@ -81,8 +113,16 @@ public class NCShell {
 					vargs.add(st.nextToken());
 				}
 				break;
+			case DM: //TODO revisar jm
+				vargs.add(st.nextToken());
+				StringBuffer message = new StringBuffer();
+				while (st.hasMoreTokens()) {
+					message.append(st.nextToken()+" "); 
+				}
+				vargs.add(message.toString());
+				break;
 			default:
-				System.out.println("That command is not valid outisde of a room");
+				System.out.println("That command is not valid outside of a room");
 				continue;
 			}
 			break;
@@ -160,6 +200,14 @@ public class NCShell {
 				}
 				break;
 			// This command requires an special parameter:
+			case DM: //TODO revisar jm	
+				vargs.add(st.nextToken());
+				StringBuffer mess = new StringBuffer();
+				while (st.hasMoreTokens()) {
+					mess.append(st.nextToken()+" "); //TODO no me gustan este tipo de cosas, pero es mucha paliza cambiar esta clase
+				}
+				vargs.add(mess.toString());
+				break;
 			case SEND:
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
@@ -167,6 +215,7 @@ public class NCShell {
 				}
 				vargs.add(message.toString());
 				break;
+			
 			default:
 				System.out.println("That command is not valid inside a room");
 				continue;
@@ -209,8 +258,14 @@ public class NCShell {
 		//send requiere el parámetro <message>
 		case SEND:
 			if (args.length == 0) {
-				System.out
-						.println("Correct use: send <message>");
+				System.out.println("Correct use: send <message>");
+				return false;
+			}
+			break;
+		//
+		case DM:
+			if(args.length != 2) {
+				System.out.println("Correct use: "+command.getName()+" <user> <message>");
 				return false;
 			}
 			break;
