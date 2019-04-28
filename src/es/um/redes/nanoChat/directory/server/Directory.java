@@ -44,10 +44,8 @@ public class Directory {
 			dt = new DirectoryThread("Directory", DIRECTORY_PORT,	datagramCorruptionProbability);
 			dt.start();
 		} catch (SocketException e) {
-			System.err.println("Directory cannot create UDP socket on port "
-					+ DIRECTORY_PORT);
-			System.err
-					.println("Most likely a Directory process is already running and listening on that port...");
+			System.err.println("Directory cannot create UDP socket on port " + DIRECTORY_PORT);
+			System.err.println("Most likely a Directory process is already running and listening on that port...");
 			System.exit(-1);
 		}
 	}

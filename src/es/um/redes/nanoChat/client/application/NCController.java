@@ -8,9 +8,7 @@ import es.um.redes.nanoChat.client.comm.NCConnector;
 import es.um.redes.nanoChat.client.shell.NCCommand;
 import es.um.redes.nanoChat.client.shell.NCShell;
 import es.um.redes.nanoChat.directory.connector.DirectoryConnector;
-import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.NCControlMessage;
-import es.um.redes.nanoChat.messageFV.messages.NCDirectMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCNotificationMessage;
 import es.um.redes.nanoChat.messageFV.messages.NCSecretMessage;
@@ -69,14 +67,14 @@ public class NCController {
 	
 	public void outRoomProcessing() throws IOException {
 		while (clientStatus != NCClientStatus.QUIT) {
-			currentCommand = shell.readGeneralCommand(ncConnector);//TODO jm
+			currentCommand = shell.readGeneralCommand(ncConnector);
 			String[] commandArgs = shell.getCommandArguments();
 			// Process a command (status OUTROOM)
 			switch (currentCommand) {
 			case CREATE:
 				createRoom(commandArgs[0]);
 				break;
-			case DM: //TODO revisar jm
+			case DM:
 				sendDirectMessage(commandArgs[0], commandArgs[1]);
 				break;
 			case ENTER:
@@ -90,11 +88,9 @@ public class NCController {
 				break;
 			case SOCKET_IN://TODO revisar jm
 				processIncomingMessage();
-			//case NEW_DM: 
-				//System.out.println(((NCDirectMessage) message).getUser()+" [DM]: "+((NCDirectMessage)message).getText());
 				break;
 			default:
-				System.err.println("* Received an outroom command from shell not listed in outRoomProcessing");
+				System.err.println("* Received an outroom command from shell not listed in outRoomProcessing. " + currentCommand.getClass());
 				break;
 			}
 			// Possible change of state:
@@ -106,12 +102,15 @@ public class NCController {
 	
 	public void inRoomProcessing() throws IOException {
 		// Return condition: 
-		while (!shouldQuit() && clientStatus == NCClientStatus.IN_ROOM) {
+		while (clientStatus != NCClientStatus.QUIT && clientStatus == NCClientStatus.IN_ROOM) {
 			currentCommand = shell.readChatCommand(ncConnector);
 			String[] commandArgs = shell.getCommandArguments();
 			switch (currentCommand) {
-			case DM: //TODO revisar jm
+			case DM:
 				sendDirectMessage(commandArgs[0], commandArgs[1]);
+				break;
+			case QUIT:
+				clientStatus = NCClientStatus.QUIT;
 				break;
 			case EXIT:
 				exitTheRoom();
@@ -146,21 +145,21 @@ public class NCController {
 		NCMessage message = ncConnector.receiveMessage();
 		// We treat different messages in a different manner
 		switch(message.getType()){
-		case NOTIFICATION:
-			processNotification(message);
-			break;
-		case NEW_DM: 
-			System.out.println(((NCSecretMessage)message).getUser() +" [DM]: "+((NCSecretMessage)message).getText());
-			break;
 		case NEW_MESSAGE:
 			//(Example) If it's a new room message, we print the user and the message itself.
 			System.out.println(((NCTextMessage)message).getUser() + ": " + ((NCTextMessage)message).getMessage());
+			break;
+		case NEW_DM:
+			NCSecretMessage dmMessage = (NCSecretMessage) message;
+			System.out.println("[DM] " + dmMessage.getUser() + ": " + dmMessage.getText());
+			break;
+		case NOTIFICATION:
+			processNotification((NCNotificationMessage) message);
 			break;
 		case KICKED:
 			processKick();
 			break;
 		default:
-			//TODO con nota explicativa de por qué se da el fallo, aunque no se vaya  a dar.
 			System.err.println("* Received an unexpected type of incoming message");
 			break;
 		} 
@@ -257,7 +256,7 @@ public class NCController {
 			break;
 		default:
 		case IMPOSSIBLE:
-			System.out.println("* Users can't be promoted in this room.");
+			System.out.println("* The user is not in this room or users can't be promoted in this room.");
 			break;
 		}
 	}
@@ -278,11 +277,10 @@ public class NCController {
 		}
 	}
 
-	private void processNotification(NCMessage message) {
-		String user = ((NCNotificationMessage) message).getUser();
-		String object = ((NCNotificationMessage) message).getObject();
-		NCMessageType action = ((NCNotificationMessage) message).getAction();
-		switch (action) { 
+	private void processNotification(NCNotificationMessage message) {
+		String user = message.getUser();
+		String object = message.getObject();
+		switch (message.getAction()) { 
 			case ENTER:
 				System.out.println("* " + user + " has entered the room");
 				break;
@@ -299,7 +297,7 @@ public class NCController {
 				System.out.println("* " + object + " is now a holder of the KICKSWORD, thanks to " + user);
 				break;
 			default:
-				System.err.println("* A wild, not yet implemented, notification appears, be aware!"); 
+				System.err.println("* A wild, not yet implemented, notification appears, be aware!");  // xD
 				break;
 		}
 	}
@@ -308,20 +306,21 @@ public class NCController {
 	private void sendChatMessage(String chatMessage) throws IOException {
 		ncConnector.sendBroadcast(chatMessage);
 	}
+	
 	//Método para enviar un mensaje directo a un usuario registrado en el servidor
 	private void sendDirectMessage(String receiver, String text) throws IOException { //TODO revisar jm
 		NCControlMessage answer = (NCControlMessage) ncConnector.sendDirect(receiver, text);
 		switch (answer.getType()) {
 			case OK:
 				break;
-			case DENIED:
-				System.out.println("* The user "+receiver+" is not logged into the server");
-				break;
 			case IMPOSSIBLE:
-				System.out.println("* You can't do that ");
+				System.out.println("* The user " + receiver + " is not logged into the server");
+				break;
+			case DENIED:
+				System.out.println("* You can't send yourself a direct message");
 				break;
 			default:
-				System.out.println("* An error occurred while trying to contact with "+receiver);
+				System.out.println("* An error occurred while trying to contact with " + receiver);
 				break;
 		}
 	}
@@ -382,11 +381,6 @@ public class NCController {
 
 	public NCCommand getCurrentCommand() {		
 		return currentCommand;
-	}
-
-	//Método que comprueba si el usuario ha introducido el comando para salir de la aplicación
-	public boolean shouldQuit() {
-		return currentCommand == NCCommand.QUIT;
 	}
 
 }

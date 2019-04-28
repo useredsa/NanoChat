@@ -11,7 +11,7 @@ public interface NCRoomManager {
 	//Método para registrar a un usuario u en una sala (se anota también su socket de comunicación)
 	public abstract boolean enter(String user, NCServerThread userThread) throws IOException;
 	//Método para eliminar un usuario de una sala
-	public abstract void exit(String user) throws IOException;
+	public abstract void exit(String user);
 	//Método para hacer llegar un mensaje enviado por un usuario u
 	public abstract void broadcastMessage(String user, String message);
 	//Método para devolver la descripción del estado actual de la sala
@@ -40,6 +40,7 @@ public interface NCRoomManager {
 	 * <li> IMPOSSIBLE if the room doesn't implement this functionality.</li>
 	 * <li> DENIED if the user can't perform this operation (because they don't have the necessary rights).</li>
 	 * <li> REPEATED if the user being promoted is already an administrator.</li>
+	 * <li> IMPOSSIBLE if the user is not in this room </li>
 	 * </ul>
 	 * @param user The user that performs the operation.
 	 * @param promoted The user being promoted

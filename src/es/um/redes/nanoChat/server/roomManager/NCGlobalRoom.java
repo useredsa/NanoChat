@@ -27,19 +27,18 @@ public class NCGlobalRoom implements NCRoomManager {
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action) {
-		sendNotification(user, action, "4J4Yt-2n?do032er3px*olf56=20");
+		sendNotification(user, action, null);
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action, String object)  {
-		//if (object == null) object = "4J4Yt-2n?do032er3px*olf56=20";
-		try {
-			for(String e : members.keySet()) {
-				if (e != user && e != object) {
+		for(String e : members.keySet()) {
+			if (e != user && e != object) {
+				try {
 					members.get(e).writeUTF(new NCNotificationMessage(user,action,object).encode());
+				} catch (IOException e1) {
+					System.err.println("* An error ocurred while notifying in room: " + roomName);
 				}
 			}
-		} catch (IOException e1) {
-			System.err.println("* An error ocurred while notifying in room: "+roomName);
 		}
 	}
 	
@@ -54,15 +53,8 @@ public class NCGlobalRoom implements NCRoomManager {
 	
 	@Override
 	public synchronized void exit(String user) {
-		//DataOutputStream dos =; 
 		members.remove(user);
 		sendNotification(user, NCMessageType.EXIT);
-		/*if (dos != null)
-			try {
-				dos.close();
-			} catch (IOException e) {
-				System.out.println("* An error ocurred while disconnecting user "+user+" from room "+roomName);
-			}*/
 	}
 
 	@Override 

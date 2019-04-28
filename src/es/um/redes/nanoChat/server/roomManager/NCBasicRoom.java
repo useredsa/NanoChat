@@ -42,24 +42,23 @@ public class NCBasicRoom implements NCRoomManager {
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action) {
-		sendNotification(user, action, "4J4Yt-2n?do032er3px*olf56=20");
+		sendNotification(user, action, null);
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action, String object)  {
-		//if (object == null) object = "4J4Yt-2n?do032er3px*olf56=20";
-		try {
-			for(String e : members.keySet()) {
-				if (e != user && e != object) {
+		for(String e : members.keySet()) {
+			if (!e.equals(user) && !e.equals(object)) {
+				try {
 					members.get(e).dos.writeUTF(new NCNotificationMessage(user,action,object).encode()); 
+				} catch (IOException e1) {
+					System.err.println("* An error ocurred while notifying the user " + e + " from room: " + roomName);
 				}
 			}
-		} catch (IOException e1) {
-			System.err.println("* An error ocurred while notifying in room: "+roomName);
 		}
 	}
 	
 	@Override
-	public synchronized boolean enter(String user, NCServerThread userThread) throws IOException{
+	public synchronized boolean enter(String user, NCServerThread userThread) throws IOException {
 		if (deleted || members.containsKey(user))
 			return false;
 		UserInfo userInfo = new UserInfo(new DataOutputStream(userThread.getSocket().getOutputStream()), userThread);
@@ -69,14 +68,10 @@ public class NCBasicRoom implements NCRoomManager {
 	}
 	
 	@Override
-	public synchronized void exit(String user) throws IOException {
+	public synchronized void exit(String user) {
 		admins.remove(user);
-		//UserInfo info = 
 		members.remove(user);
 		sendNotification(user, NCMessageType.EXIT);
-		/*if (info != null) {
-			info.dos.close();
-		}*/
 		if (members.isEmpty()) {
 			serverManager.deleteRoom(roomName);
 			deleted = true;

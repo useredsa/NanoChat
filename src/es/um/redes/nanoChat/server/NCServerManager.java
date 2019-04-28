@@ -25,15 +25,12 @@ public class NCServerManager {
 	/** Names of the global rooms in the server */
 	private final static String[] GLOBAL_ROOMS = {"General", "PublicBar"};
 	/** Registered names */
-	private ConcurrentHashMap<String, Boolean> users; // used as set because concurrent set does not exist
-	/** */
-	private ConcurrentHashMap<String, NCServerThread> connections;
+	private ConcurrentHashMap<String, NCServerThread> users;
 	/** Available Rooms (and their room managers) */
 	private ConcurrentHashMap<String, NCRoomManager> rooms;	
 	
 	NCServerManager() {
-		users = new ConcurrentHashMap<String, Boolean>();
-		connections = new ConcurrentHashMap<String, NCServerThread>();
+		users = new ConcurrentHashMap<String, NCServerThread>();
 		rooms = new ConcurrentHashMap<String, NCRoomManager>();
 		for (String roomName : GLOBAL_ROOMS) {
 			rooms.put(roomName, new NCGlobalRoom(this, roomName));
@@ -53,11 +50,8 @@ public class NCServerManager {
 	 */
 	public boolean addUser(String username, NCServerThread th) {
 		// The following call is atomic, don't touch it unless you know what you are doing:
-		//TODO yep i dont know what im doing, sorry but not sorry, im doing my f***** job
-		if(users.putIfAbsent(username, true) == null) {
-				connections.put(username,th);
+		if(users.putIfAbsent(username, th) == null)
 			return true;
-		}
 		return false;	
 	}
 	
@@ -68,7 +62,6 @@ public class NCServerManager {
 	 */
 	public void removeUser(String user) {
 		users.remove(user);
-		connections.remove(user);	//TODO revisar jm
 	}
 	
 	//Devuelve la descripción de las salas existentes
@@ -138,9 +131,9 @@ public class NCServerManager {
 	
 	public DataOutputStream getConnectionWith(String user) {
 		try {
-			NCServerThread hilo = connections.get(user);
-			if(hilo != null)
-				return new DataOutputStream(hilo.getSocket().getOutputStream());
+			NCServerThread thread = users.get(user);
+			if(thread != null)
+				return new DataOutputStream(thread.getSocket().getOutputStream());
 			return null;
 		} catch (IOException e) {
 			//e.printStackTrace();

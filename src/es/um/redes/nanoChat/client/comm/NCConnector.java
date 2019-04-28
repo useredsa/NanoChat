@@ -7,9 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.Collection;
-import java.util.Collections;
 
-import es.um.redes.nanoChat.messageFV.InvalidFormat;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.*;
 import es.um.redes.nanoChat.server.roomManager.NCRoomDescription;
@@ -109,9 +107,6 @@ public class NCConnector {
 	public boolean isDataAvailable() throws IOException {
 		return (dis.available() != 0);
 	}
-	
-	//IMPORTANTE!!
-	//Es necesario implementar métodos para recibir y enviar mensajes de chat a una sala
 	
 	//Metodo para mandar un DM a una persona 
 	public NCControlMessage sendDirect(String receiver, String message) throws IOException {

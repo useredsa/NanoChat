@@ -3,7 +3,6 @@ package es.um.redes.nanoChat.client.shell;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.concurrent.TimeUnit;
@@ -11,17 +10,11 @@ import java.util.concurrent.TimeUnit;
 import es.um.redes.nanoChat.client.comm.NCConnector;
 
 public class NCShell {
-	/**
-	 * Scanner para leer comandos de usuario de la entrada estándar
-	 */
-	private Scanner reader;
 
 	NCCommand command = NCCommand.INVALID;
 	String[] commandArgs = new String[0];
 
 	public NCShell() {
-		reader = new Scanner(System.in); 
-
 		System.out.println("NanoChat shell");
 		System.out.println("For help, type 'help'");
 	}
@@ -48,15 +41,7 @@ public class NCShell {
 		Vector<String> vargs = new Vector<String>();
 		while (true) {
 			System.out.print("(nanoChat) ");
-			/*//obtenemos la línea tecleada por el usuario
-			String input = reader.nextLine();
-			StringTokenizer st = new StringTokenizer(input);
-			//si no hay ni comando entonces volvemos a empezar
-			if (st.hasMoreTokens() == false) {
-				continue;
-			}*/
-			//TODO revisar jm
-			//Utilizamos un BufferedReader en lugar de un Scanner porque no podemos bloquear la entrada
+			//Utilizamos un BufferedReader porque no podemos bloquear la entrada
 			BufferedReader standardInput = new BufferedReader(new InputStreamReader(System.in));
 			boolean blocked = true; 
 			String input ="";
@@ -113,7 +98,7 @@ public class NCShell {
 					vargs.add(st.nextToken());
 				}
 				break;
-			case DM: //TODO revisar jm
+			case DM:
 				vargs.add(st.nextToken());
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
@@ -147,7 +132,7 @@ public class NCShell {
 		Vector<String> vargs = new Vector<String>();
 		while (true) {
 			System.out.print("(nanoChat-room) ");
-			//Utilizamos un BufferedReader en lugar de un Scanner porque no podemos bloquear la entrada
+			//Utilizamos un BufferedReader porque no podemos bloquear la entrada
 			BufferedReader standardInput = new BufferedReader(new InputStreamReader(System.in));
 			boolean blocked = true; 
 			String input ="";
@@ -189,6 +174,7 @@ public class NCShell {
 				continue;
 			// This commands don't require parameters:
 			case INFO:
+			case QUIT:
 			case EXIT:
 				break;
 			// This commands require parameters:
@@ -234,14 +220,14 @@ public class NCShell {
 		// CREATE/ENTER require the room name
 		case CREATE:
 		case ENTER:
-			if (args.length == 0 || args.length > 1) {
+			if (args.length != 1) {
 				System.out.println("Correct use: " + command.getName() + " <room name>");
 				return false;
 			}
 			break;
 		// RENAME requires the new name
 		case RENAME:
-			if (args.length == 0 || args.length > 1) {
+			if (args.length != 1) {
 				System.out.println("Correct use: " + command.getName() + " <new room name>");
 				return false;
 			}
@@ -250,22 +236,22 @@ public class NCShell {
 		case NICK:
 		case PROMOTE:
 		case KICK:
-			if (args.length == 0 || args.length > 1) {
+			if (args.length != 1) {
 				System.out.println("Correct use: " + command.getName() + " <username>");
 				return false;
 			}		
 			break;
-		//send requiere el parámetro <message>
+		//SEND requieres a message
 		case SEND:
 			if (args.length == 0) {
 				System.out.println("Correct use: send <message>");
 				return false;
 			}
 			break;
-		//
+		//DM requieres user and message
 		case DM:
 			if(args.length != 2) {
-				System.out.println("Correct use: "+command.getName()+" <user> <message>");
+				System.out.println("Correct use: " + command.getName() + " <username> <message>");
 				return false;
 			}
 			break;

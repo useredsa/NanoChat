@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import es.um.redes.nanoChat.client.application.NCController;
 import es.um.redes.nanoChat.messageFV.InvalidFormat;
 import es.um.redes.nanoChat.messageFV.NCMessageType;
 import es.um.redes.nanoChat.messageFV.messages.*;
@@ -68,11 +67,7 @@ public class NCServerThread extends Thread {
 			// If an error occurs with the communications the user is removed from all the managers and the connection is closed
 			if (user != null) {
 				if (roomManager != null) {
-					try {
-						roomManager.exit(user);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+					roomManager.exit(user);
 				}
 				serverManager.removeUser(user);
 			}
@@ -229,16 +224,17 @@ public class NCServerThread extends Thread {
 		case SEND:
 			roomManager.broadcastMessage(user, ((NCSendMessage) message).getText()); 
 			break;			
-		case DM: //TODO
-			String receiver = ((NCDirectMessage)message).getUser();
+		case DM: //TODO refactor and move out
+			NCDirectMessage dmMessage = ((NCDirectMessage)message);  //TODO problemas de conexion
+			String receiver = dmMessage.getUser();
 			if(!receiver.equals(user)) {
-				String text = ((NCDirectMessage)message).getText();
+				String text = dmMessage.getText();
 				DataOutputStream connection = serverManager.getConnectionWith(receiver);
 				if(connection != null) {
 					connection.writeUTF(new NCSecretMessage(user,text).encode());
 					dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
-				}else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
-			}else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
+				} else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
+			} else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
 			break;
 		case EXIT:
 			mustExitRoom = true;

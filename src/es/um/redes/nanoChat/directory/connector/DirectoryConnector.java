@@ -23,6 +23,7 @@ public class DirectoryConnector {
 	private static final byte REGISTER_OPCODE = 16;
 	private static final byte QUERY_OPCODE	  = 8;
 	private static final byte INFO_OPCODE	  = 4;
+	@SuppressWarnings("unused")
 	private static final byte NOTFOUND_OPCODE = 2;
 	private static final byte ACK_OPCODE	  = 0;
 	
