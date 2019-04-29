@@ -46,10 +46,13 @@ public class NCBasicRoom implements NCRoomManager {
 	}
 	
 	private synchronized void sendNotification(String user, NCMessageType action, String object)  {
+		boolean rename = NCMessageType.RENAME == action;
+		boolean promote = NCMessageType.PROMOTE == action;
+		String notification = new NCNotificationMessage(user,action,object).encode();
 		for(String e : members.keySet()) {
-			if (!e.equals(user) && !e.equals(object)) {
+			if (!e.equals(user) && (!e.equals(object) || rename || promote)) {
 				try {
-					members.get(e).dos.writeUTF(new NCNotificationMessage(user,action,object).encode()); 
+					members.get(e).dos.writeUTF(notification); 
 				} catch (IOException e1) {
 					System.err.println("* An error ocurred while notifying the user " + e + " from room: " + roomName);
 				}
