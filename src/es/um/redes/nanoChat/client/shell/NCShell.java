@@ -36,7 +36,7 @@ public class NCShell {
 	}
 
 	//Usa la entrada estándar para leer comandos y procesarlos
-	private String[] readGeneralCommandFromStdIn(NCConnector ncclient) { //TODO revisar jm
+	private String[] readGeneralCommandFromStdIn(NCConnector ncclient) {
 		String[] args = new String[0];
 		Vector<String> vargs = new Vector<String>();
 		while (true) {
@@ -71,7 +71,7 @@ public class NCShell {
 			StringTokenizer st = new StringTokenizer(input);
 			if (st.hasMoreTokens() == false) {
 				continue;
-			}//TODO jm
+			}
 			//traducimos la cadena del usuario en el código de comando correspondiente
 			command = NCCommand.stringToCommand(st.nextToken());
 			//Dependiendo del comando...
@@ -186,18 +186,18 @@ public class NCShell {
 				}
 				break;
 			// This command requires an special parameter:
-			case DM: //TODO revisar jm	
+			case DM:	
 				vargs.add(st.nextToken());
 				StringBuffer mess = new StringBuffer();
 				while (st.hasMoreTokens()) {
-					mess.append(st.nextToken()+" "); //TODO no me gustan este tipo de cosas, pero es mucha paliza cambiar esta clase
-				}
+					mess.append(st.nextToken() + " ");	// no me gustan este tipo de cosas, que no respetan los espacios iniciales,
+				}									 	// pero es mucha paliza cambiar esta clase
 				vargs.add(mess.toString());
 				break;
 			case SEND:
 				StringBuffer message = new StringBuffer();
 				while (st.hasMoreTokens()) {
-					message.append(st.nextToken()+" "); //TODO no me gustan este tipo de cosas, pero es mucha paliza cambiar esta clase
+					message.append(st.nextToken() + " ");
 				}
 				vargs.add(message.toString());
 				break;

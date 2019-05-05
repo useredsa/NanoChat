@@ -15,35 +15,47 @@ public interface NCMessage {
 		String message = dis.readUTF();
 		NCMessageDecoder dec = new NCMessageDecoder(message);
 		NCMessageType op = dec.getMessageOp();
+		NCMessage decodedMessage = null;
 		switch (op) {
 		case CREATE:
-			return NCCreateMessage.decode(dec);
+			decodedMessage = NCCreateMessage.decode(dec);
+			break;
 		case DM:
-			return NCDirectMessage.decode(dec);
+			decodedMessage = NCDirectMessage.decode(dec);
+			break;
 		case ENTER:
-			return NCEnterMessage.decode(dec);
-		case INVALID_CODE:
+			decodedMessage = NCEnterMessage.decode(dec);
 			break;
 		case KICK:
-			return NCKickMessage.decode(dec);
+			decodedMessage = NCKickMessage.decode(dec);
+			break;
 		case NOTIFICATION:
-			return NCNotificationMessage.decode(dec);
-		case NEW_DM: //TODO lo mas seguro es que no haga falta
-			return NCSecretMessage.decode(dec);
+			decodedMessage = NCNotificationMessage.decode(dec);
+			break;
+		case NEW_DM:
+			decodedMessage = NCSecretMessage.decode(dec);
+			break;
 		case NEW_MESSAGE:
-			return NCTextMessage.decode(dec);
+			decodedMessage = NCTextMessage.decode(dec);
+			break;
 		case PROMOTE:
-			return NCPromoteMessage.decode(dec);
+			decodedMessage = NCPromoteMessage.decode(dec);
+			break;
 		case REGISTER:
-			return NCRegisterMessage.decode(dec);
+			decodedMessage = NCRegisterMessage.decode(dec);
+			break;
 		case RENAME:
-			return NCRenameMessage.decode(dec);
+			decodedMessage = NCRenameMessage.decode(dec);
+			break;
 		case ROOM_INFO:
-			return NCRoomInfoMessage.decode(dec);
+			decodedMessage = NCRoomInfoMessage.decode(dec);
+			break;
 		case ROOMS_LIST:
-			return NCRoomListMessage.decode(dec);
+			decodedMessage = NCRoomListMessage.decode(dec);
+			break;
 		case SEND:
-			return NCSendMessage.decode(dec);
+			decodedMessage = NCSendMessage.decode(dec);
+			break;
 		case OK:
 		case DENIED:
 		case IMPOSSIBLE:
@@ -53,11 +65,13 @@ public interface NCMessage {
 		case KICKED:
 		case QUIT:
 		case LIST_ROOMS:
-			return new NCControlMessage(op);
-		default:
-			System.err.println("In class NCMessage: Yet unimplemented method (You fool)");
+			decodedMessage = new NCControlMessage(op);
+			break;
+		case INVALID_CODE:
+			break;
+		default: System.err.println("In class NCMessage: Yet unimplemented message decodification (You fool)");
 		}
-		return null; // Won't reach here
+		return decodedMessage;
 	}
 	
 	public static NCMessage readFromSocketNoChecks(DataInputStream dis) throws IOException {
@@ -71,9 +85,6 @@ public interface NCMessage {
 		}
 	}
 	
-	// Devuelve el opcode del mensaje
 	public abstract NCMessageType getType();
-	
-	// Método que debe ser implementado específicamente por cada subclase de NCMessage
 	public abstract String encode();
 }

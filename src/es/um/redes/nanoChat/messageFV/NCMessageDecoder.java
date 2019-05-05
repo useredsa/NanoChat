@@ -2,7 +2,7 @@ package es.um.redes.nanoChat.messageFV;
 
 public class NCMessageDecoder {
 	private static final char DELIMITER = ':';    //Define el delimitador
-	private static final char SEPARATOR = '&'; //TODO move apart for encoder and decoder
+	private static final char SEPARATOR = '&';	  // Defines the separator character (copied from NCMessageEncoder) //TODO (put in another class)
 	private static final char END_LINE = '\n';    //Define el carácter de fin de línea
 	private static final String OPCODE_FIELD = "Operation";
 	private int currentLine;

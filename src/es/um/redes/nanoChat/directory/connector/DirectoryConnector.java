@@ -44,7 +44,7 @@ public class DirectoryConnector {
 		//Genera el mensaje de consulta llamando a buildQuery()
 		byte[] message = buildQuery(protocol);
 		//no sabemos tamano
-		byte[] answer = new byte[PACKET_MAX_SIZE]; //TODO change
+		byte[] answer = new byte[PACKET_MAX_SIZE];
 		//Construye el datagrama con la consulta
 		DatagramPacket sentPckt = new DatagramPacket(message, message.length, directoryAddress);
 		DatagramPacket ansPckt = new DatagramPacket(answer, answer.length);

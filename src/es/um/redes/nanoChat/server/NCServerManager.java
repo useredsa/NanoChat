@@ -136,8 +136,7 @@ public class NCServerManager {
 				return new DataOutputStream(thread.getSocket().getOutputStream());
 			return null;
 		} catch (IOException e) {
-			//e.printStackTrace();
-			return null; //TODO solucionar esto de una manera mas agradable para el que pida la conexion
+			return null;
 		}
 	}
 }

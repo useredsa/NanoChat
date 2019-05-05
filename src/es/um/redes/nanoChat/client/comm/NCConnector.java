@@ -26,9 +26,10 @@ public class NCConnector {
 		dis = new DataInputStream(socket.getInputStream());
 	}
 
-	/* Aclaración: //TODO
-	 * Los métodos son todos prácticamente iguales. Por simplicidad
-	 * comentamos qué hace el código del primero.
+	/* Aclaración:
+	 * Los métodos son todos prácticamente iguales. Por simplicidad,
+	 * los últimos no están comentados, a no ser que haya
+	 * algún detalle importante.
 	 */
 	
 	/*
@@ -37,6 +38,15 @@ public class NCConnector {
 	 * No es un problema suponer que el servidor funciona correctamente
 	 * y obviar las excepciones de tipo InvalidFormat.
 	 * Para ello, utilizamos NCMessage.readFromSocketNoChecks(dis);
+	 */
+	
+	/*
+	 * Aclaración:
+	 * Tal como está, falta manejar el caso en el que se reciben mensajes
+	 * de sala mientras se espera la respuesta a un mensaje de otro tipo.
+	 * En ese caso, se debería encolar esos mensajes en una cola aparte 
+	 * para procesarlos más tarde, y actualizar los métodos de consulta de
+	 * mensajes disponibles y de obtener un mensaje nuevo.
 	 */
 	
 	// Método para registrar el nick en el servidor. Nos informa sobre si la inscripción se hizo con éxito o no.
@@ -152,7 +162,7 @@ public class NCConnector {
 			}
 		} catch (IOException e) {
 		} finally {
-			socket = null; //TODO no tengo muy claro que esto sea lo que haya que hacer 
+			socket = null; 
 		}
 	}
 

@@ -29,9 +29,9 @@ public class NCRoomInfoMessage implements NCMessage {
 	public String encode() {
 		return NCMessageEncoder
 				.ofType(MESSAGE_OP)
-				.encodeField(ROOMS_FIELD, description.name)
-				.encodeMultiField(USERS_FIELD, description.members)
-				.encodeField(LAST_MESSAGE_FIELD, String.valueOf(description.timeLastMessage))
+				.encodeField(ROOMS_FIELD, description.getName())
+				.encodeMultiField(USERS_FIELD, description.getMembers())
+				.encodeField(LAST_MESSAGE_FIELD, String.valueOf(description.getTimeLastMessage()))
 				.toString();
 	}
 	
@@ -44,6 +44,6 @@ public class NCRoomInfoMessage implements NCMessage {
 	}
 
 	public NCRoomDescription getRoomDescription() {
-		return description; //TODO consider unmodifiable
+		return description;
 	}
 }

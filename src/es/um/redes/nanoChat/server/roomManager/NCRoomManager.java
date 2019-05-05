@@ -8,17 +8,37 @@ import es.um.redes.nanoChat.server.NCServerThread;
 public interface NCRoomManager {
 	
 	public abstract String getRoomName();
-	//Método para registrar a un usuario u en una sala (se anota también su socket de comunicación)
+	/**
+	 * Processes a request from a user to enter the room.
+	 * @param user username.
+	 * @param userThread NCServerThread of the user.
+	 * @return true if the user could enter the room.
+	 * @throws IOException if an error occurs communicating with the user entering the room.
+	 */
 	public abstract boolean enter(String user, NCServerThread userThread) throws IOException;
-	//Método para eliminar un usuario de una sala
-	public abstract void exit(String user);
-	//Método para hacer llegar un mensaje enviado por un usuario u
-	public abstract void broadcastMessage(String user, String message);
-	//Método para devolver la descripción del estado actual de la sala
-	public abstract NCRoomDescription getDescription();
-	//Método para devolver el número de usuarios conectados a una sala
-	public abstract int usersInRoom();
 	
+	/**
+	 * Processes a request from a user to exit the room.
+	 * @param user username
+	 */
+	public abstract void exit(String user);
+	
+	/**
+	 * Processes a request to broadcast a message to the rest of the users in the room.
+	 * @param user username of the writer
+	 * @param message text of the message
+	 */
+	public abstract void broadcastMessage(String user, String message);
+	
+	/**
+	 * @return An NCRoomDescription object containing the room's basic information. 
+	 */
+	public abstract NCRoomDescription getDescription();
+	
+	/**
+	 * @return The number of users inside the room.
+	 */
+	public abstract int usersInRoom();
 	
 	/**
 	 * Processes a request to rename the room. The function returns a control message of type:

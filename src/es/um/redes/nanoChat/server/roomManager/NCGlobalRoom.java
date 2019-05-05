@@ -14,27 +14,33 @@ import es.um.redes.nanoChat.server.NCServerManager;
 import es.um.redes.nanoChat.server.NCServerThread;
 
 public class NCGlobalRoom implements NCRoomManager {
-	@SuppressWarnings("unused")
-	private final NCServerManager serverManager;
-	private String roomName;
-	private final HashMap<String, DataOutputStream> members;
-	private long timeLastMessage = 0;
+	
+	protected class UserInfo {
+		DataOutputStream dos;
+		NCServerThread thread;
+		
+		UserInfo(DataOutputStream dos, NCServerThread thread) {
+			this.dos = dos;
+			this.thread = thread;
+		}
+	}
+	
+	protected final NCServerManager serverManager;
+	protected String roomName;
+	protected final HashMap<String, UserInfo> members;
+	protected long timeLastMessage = 0;
 	
 	public NCGlobalRoom(NCServerManager serverManager, String name) {
 		this.serverManager = serverManager;
 		roomName = name;
-		members = new HashMap<String, DataOutputStream>();
+		members = new HashMap<String, UserInfo>();
 	}
 	
-	private synchronized void sendNotification(String user, NCMessageType action) {
-		sendNotification(user, action, null);
-	}
-	
-	private synchronized void sendNotification(String user, NCMessageType action, String object)  {
+	private synchronized void sendNotification(String user, NCMessageType action)  {
 		for(String e : members.keySet()) {
-			if (e != user && e != object) {
+			if (e != user) {
 				try {
-					members.get(e).writeUTF(new NCNotificationMessage(user,action,object).encode());
+					members.get(e).dos.writeUTF(new NCNotificationMessage(user, action, null).encode());
 				} catch (IOException e1) {
 					System.err.println("* An error ocurred while notifying in room: " + roomName);
 				}
@@ -43,10 +49,11 @@ public class NCGlobalRoom implements NCRoomManager {
 	}
 	
 	@Override
-	public synchronized boolean enter(String user, NCServerThread userThread) throws IOException{
+	public synchronized boolean enter(String user, NCServerThread userThread) throws IOException {
 		if (members.containsKey(user))
 			return false;
-		members.put(user, new DataOutputStream(userThread.getSocket().getOutputStream()));
+		DataOutputStream userDos = new DataOutputStream(userThread.getSocket().getOutputStream()); 
+		members.put(user, new UserInfo(userDos, userThread));
 		sendNotification(user, NCMessageType.ENTER);
 		return true;
 	}
@@ -59,10 +66,10 @@ public class NCGlobalRoom implements NCRoomManager {
 
 	@Override 
 	public synchronized void broadcastMessage(String user, String message) {
-		for(Map.Entry<String, DataOutputStream> entry : members.entrySet()) {
+		for(Map.Entry<String, UserInfo> entry : members.entrySet()) {
 			if (!entry.getKey().equals(user)) {
 				try {
-					entry.getValue().writeUTF(new NCTextMessage(user, message).encode());
+					entry.getValue().dos.writeUTF(new NCTextMessage(user, message).encode());
 				} catch (IOException e) {
 					System.out.println("* Could not write to user " + entry.getKey() + " from room " + roomName);
 				}
@@ -72,35 +79,33 @@ public class NCGlobalRoom implements NCRoomManager {
 	}
 
 	@Override
+	public synchronized int usersInRoom() {
+		return members.size();
+	}
+	
+	@Override
+	public synchronized String getRoomName() {
+		return roomName;
+	}
+	
+	@Override
+	public synchronized NCRoomDescription getDescription() {
+		return new NCRoomDescription(roomName, members.keySet(), timeLastMessage);
+	}
+	
+	// This following functionality is not supported by global rooms
+	@Override
 	public synchronized NCControlMessage rename(String user, String newName) {
-		// This functionality is not supported
 		return new NCControlMessage(NCMessageType.IMPOSSIBLE);
 	}
 	
 	@Override
 	public synchronized NCControlMessage promote(String user, String promoted) {
-		// This functionality is not supported
 		return new NCControlMessage(NCMessageType.IMPOSSIBLE);
 	}
 	
 	@Override
 	public synchronized NCControlMessage kick(String user, String kicked) {
-		// This functionality is not supported
 		return new NCControlMessage(NCMessageType.IMPOSSIBLE);
-	}
-
-	@Override
-	public synchronized NCRoomDescription getDescription() {
-		return new NCRoomDescription(roomName, members.keySet(), timeLastMessage);
-	}
-
-	@Override
-	public synchronized int usersInRoom() {
-		return members.size();
-	}
-
-	@Override
-	public synchronized String getRoomName() {
-		return roomName;
 	}
 }

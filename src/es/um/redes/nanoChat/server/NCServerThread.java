@@ -61,7 +61,7 @@ public class NCServerThread extends Thread {
 			System.out.println("* User " + user + " sent an invalid format message. Reason: " + e.getMessage());
 			System.out.println("* Disconnecting " + user);
 		} catch (Exception e) {
-			System.out.println("* User "+ user + " disconnected. " + e.getMessage());
+			System.out.println("* User "+ user + " disconnected.");
 			
 		} finally {
 			// If an error occurs with the communications the user is removed from all the managers and the connection is closed
@@ -116,7 +116,7 @@ public class NCServerThread extends Thread {
 	 * not support reading after close, or another I/O error occurs.
 	 * @throws InvalidFormat if a wrong formatted message is received.
 	 */
-	private void attendInRoom() throws IOException, InvalidFormat  { //TODO acabar //TODO quitar invalid format con metodo, as above
+	private void attendInRoom() throws IOException, InvalidFormat  {
 		mustExitRoom = false;
 		mustBeKicked.set(false);
 		boolean unProcessedMessage = false;
@@ -224,13 +224,13 @@ public class NCServerThread extends Thread {
 		case SEND:
 			roomManager.broadcastMessage(user, ((NCSendMessage) message).getText()); 
 			break;			
-		case DM: //TODO refactor and move out
-			NCDirectMessage dmMessage = ((NCDirectMessage)message);  //TODO problemas de conexion
+		case DM: // should be refactored and moved out
+			NCDirectMessage dmMessage = ((NCDirectMessage) message);
 			String receiver = dmMessage.getUser();
 			if(!receiver.equals(user)) {
 				String text = dmMessage.getText();
 				DataOutputStream connection = serverManager.getConnectionWith(receiver);
-				if(connection != null) {
+				if (connection != null) {
 					connection.writeUTF(new NCSecretMessage(user,text).encode());
 					dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
 				} else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());

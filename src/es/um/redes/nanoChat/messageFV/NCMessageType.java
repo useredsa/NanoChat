@@ -27,7 +27,7 @@ public enum NCMessageType {
 	ROOM_INFO("Room info"),
 	KICKED("YOU GOT RICKROLLED"), 	// Un poquito de gracia :P 
 	NEW_MESSAGE("New text message"), 
-	NEW_DM("New DM"), //TODO revisar jm
+	NEW_DM("New DM"),
 	NOTIFICATION("New Notification");
 	
 	private final String messageText;	// Text that appears in the Field-Value encoding 

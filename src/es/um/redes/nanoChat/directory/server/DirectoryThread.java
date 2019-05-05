@@ -33,8 +33,8 @@ public class DirectoryThread extends Thread {
 
 		System.out.println("Directory starting...");
 		boolean running = true;
-		while (running) {
-			try {
+		try {
+			while (running) {
 				DatagramPacket pckt = new DatagramPacket(buf, buf.length);
 				// 1) Recibir la solicitud por el socket
 				socket.receive(pckt);
@@ -42,17 +42,18 @@ public class DirectoryThread extends Thread {
 				InetSocketAddress clientAddress = (InetSocketAddress) pckt.getSocketAddress();
 				// 3) Vemos si el mensaje debe ser descartado por la probabilidad de descarte
 				if (Math.random() < messageDiscardProbability) {
-					System.err.println("Directory DISCARDED corrupt request from " + clientAddress.getHostString()); //TODO check method
+					System.err.println("Directory DISCARDED corrupt request from " + clientAddress.getHostString());
 					continue;
 				}
 				// 4) Analizar y procesar la solicitud (llamada a processRequestFromCLient)
 				processRequestFromClient(pckt.getData(), clientAddress);
-			} catch (IOException e) {
-				System.err.println(e.toString());
-				e.printStackTrace();
 			}
+		} catch (IOException e) {
+			System.err.println(e.toString());
+			e.printStackTrace();
+		} finally {
+			socket.close();			
 		}
-		socket.close(); //TODO meter en finally?
 	}
 
 	//Método para procesar la solicitud enviada por clientAddr
@@ -83,7 +84,7 @@ public class DirectoryThread extends Thread {
 
 	//Método para enviar una respuesta vacía (no hay servidor)
 	private void sendEmpty(InetSocketAddress clientAddr) throws IOException {
-		ByteBuffer ret = ByteBuffer.allocate(1); //TODO cambiar 
+		ByteBuffer ret = ByteBuffer.allocate(1); // Hardcoded
 		ret.put(NOTFOUND_OPCODE);
 		DatagramPacket pckt = new DatagramPacket(ret.array(), ret.array().length, clientAddr);
 		socket.send(pckt);
@@ -91,9 +92,9 @@ public class DirectoryThread extends Thread {
 
 	//Método para enviar la dirección del servidor al cliente
 	private void sendServerInfo(InetSocketAddress serverAddress, InetSocketAddress clientAddr) throws IOException {
-		ByteBuffer ret = ByteBuffer.allocate(9); //TODO cambiar 
+		ByteBuffer ret = ByteBuffer.allocate(9); // Hardcoded
 		ret.put(INFO_OPCODE);
-		ret.put(serverAddress.getAddress().getAddress()); //TODO ask length to the f4cking teacha
+		ret.put(serverAddress.getAddress().getAddress()); // IPv4
 		ret.putInt(serverAddress.getPort());
 		DatagramPacket pckt = new DatagramPacket(ret.array(), ret.array().length, clientAddr);
 		socket.send(pckt);
@@ -101,7 +102,7 @@ public class DirectoryThread extends Thread {
 
 	//Método para enviar la confirmación del registro
 	private void sendOK(InetSocketAddress clientAddr) throws IOException {
-		ByteBuffer ret = ByteBuffer.allocate(1); //TODO cambiar 
+		ByteBuffer ret = ByteBuffer.allocate(1); // HardCoded 
 		ret.put(ACK_OPCODE);
 		DatagramPacket pckt = new DatagramPacket(ret.array(), ret.array().length, clientAddr);
 		socket.send(pckt);

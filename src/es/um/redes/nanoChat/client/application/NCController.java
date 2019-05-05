@@ -27,7 +27,7 @@ public class NCController {
 	//Constructor
 	public NCController() {
 		shell = new NCShell();
-		//TODO currentCommand = NCCommands.NOT_SET;
+		currentCommand = NCCommand.INVALID;
 		clientStatus = NCClientStatus.PRE_CONNECTION;
 	}
 	
@@ -40,7 +40,7 @@ public class NCController {
 		// hasta que el usuario quiera salir de la aplicación.
 		try {
 			while (clientStatus != NCClientStatus.QUIT) {
-				currentCommand = shell.readGeneralCommand(ncConnector);		// Read valid command //TODO jm
+				currentCommand = shell.readGeneralCommand(ncConnector);	// Read valid command
 				String[] commandArgs = shell.getCommandArguments();	// and its arguments
 				// Process a command (status PRE_CONNECTION)
 				switch (currentCommand) {
@@ -71,6 +71,9 @@ public class NCController {
 			String[] commandArgs = shell.getCommandArguments();
 			// Process a command (status OUTROOM)
 			switch (currentCommand) {
+			case NICK:
+				System.out.println("* You can't register twice");
+				break;
 			case CREATE:
 				createRoom(commandArgs[0]);
 				break;
@@ -86,7 +89,7 @@ public class NCController {
 			case QUIT:
 				clientStatus = NCClientStatus.QUIT;
 				break;
-			case SOCKET_IN://TODO revisar jm
+			case SOCKET_IN:
 				processIncomingMessage();
 				break;
 			default:
@@ -190,8 +193,8 @@ public class NCController {
 			System.out.println("* You created the room " + roomName + ". You are now inside.");
 			clientStatus = NCClientStatus.IN_ROOM;
 			return;
-		}//TODO manejar casos que ofrece el servidor (nombre inválido, nombre repetido, etc)
-		System.out.println("* You cannot create a room called " + roomName +". Try another.");
+		} //TODO manejar casos que ofrece el servidor (nombre inválido, nombre repetido, etc) tanto en create como en enter aquí abajo
+		System.out.println("* A room called " + roomName +" already exists.");
 	}
 
 	// Método para tramitar la solicitud de acceso del usuario a una sala concreta
@@ -200,7 +203,7 @@ public class NCController {
 			System.out.println("* You entered the room.");
 			clientStatus = NCClientStatus.IN_ROOM;
 			return;
-		} //TODO manejar diferentes respuestas del servidor (como las de create)
+		}
 		// Si la respuesta es un rechazo entonces informamos al usuario
 		System.out.println("* The room doesn't exist or you cannot enter that room");
 	}
@@ -308,7 +311,7 @@ public class NCController {
 	}
 	
 	//Método para enviar un mensaje directo a un usuario registrado en el servidor
-	private void sendDirectMessage(String receiver, String text) throws IOException { //TODO revisar jm
+	private void sendDirectMessage(String receiver, String text) throws IOException {
 		NCControlMessage answer = (NCControlMessage) ncConnector.sendDirect(receiver, text);
 		switch (answer.getType()) {
 			case OK:

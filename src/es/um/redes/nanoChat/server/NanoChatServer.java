@@ -28,8 +28,6 @@ public class NanoChatServer implements Runnable {
     private NanoChatServer(InetSocketAddress a) {
     	this.socketAddress = a;
     	manager = new NCServerManager();
-    	//TODO Registramos una sala de chat en el servidor (subclase de NCRoomManager)
-    	//TODO manager.registerRoomManager();
     }
 
 
