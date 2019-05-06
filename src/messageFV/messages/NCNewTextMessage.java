@@ -5,14 +5,14 @@ import messageFV.NCMessageDecoder;
 import messageFV.NCMessageEncoder;
 import messageFV.NCMessageType;
 
-public class NCTextMessage implements NCMessage {
+public class NCNewTextMessage implements NCMessage {
 	static private final NCMessageType MESSAGE_OP = NCMessageType.NEW_MESSAGE;
 	static private final String FIELD1_NAME = "User";
 	static private final String FIELD2_NAME = "Text";
 	private final String user;
 	private final String text;
 	
-	public NCTextMessage(String username, String text) {
+	public NCNewTextMessage(String username, String text) {
 		this.user = username;
 		this.text = text;
 	}
@@ -31,11 +31,11 @@ public class NCTextMessage implements NCMessage {
 				.toString();
 	}
 	
-	static NCTextMessage decode(NCMessageDecoder dec) throws InvalidFormat {
+	static NCNewTextMessage decode(NCMessageDecoder dec) throws InvalidFormat {
 		String user = dec.decodeField(FIELD1_NAME);
 		String text = dec.decodeField(FIELD2_NAME);
 		dec.assertNoMoreToRead();
-		return new NCTextMessage(user, text);
+		return new NCNewTextMessage(user, text);
 	}
 	
 	public String getUser() {

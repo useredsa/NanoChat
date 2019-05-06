@@ -11,8 +11,8 @@ import directory.connector.DirectoryConnector;
 import messageFV.messages.NCControlMessage;
 import messageFV.messages.NCMessage;
 import messageFV.messages.NCNotificationMessage;
-import messageFV.messages.NCSecretMessage;
-import messageFV.messages.NCTextMessage;
+import messageFV.messages.NCNewDirectMessage;
+import messageFV.messages.NCNewTextMessage;
 import server.rooms.NCRoomDescription;
 
 public class NCController {
@@ -150,10 +150,10 @@ public class NCController {
 		switch(message.getType()){
 		case NEW_MESSAGE:
 			//(Example) If it's a new room message, we print the user and the message itself.
-			System.out.println(((NCTextMessage)message).getUser() + ": " + ((NCTextMessage)message).getMessage());
+			System.out.println(((NCNewTextMessage)message).getUser() + ": " + ((NCNewTextMessage)message).getMessage());
 			break;
 		case NEW_DM:
-			NCSecretMessage dmMessage = (NCSecretMessage) message;
+			NCNewDirectMessage dmMessage = (NCNewDirectMessage) message;
 			System.out.println("[DM] " + dmMessage.getUser() + ": " + dmMessage.getText());
 			break;
 		case NOTIFICATION:

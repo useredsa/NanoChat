@@ -143,6 +143,9 @@ public class NCServerThread extends Thread {
 		roomManager.exit(user);
 		roomManager = null;
 		if (unProcessedMessage) {
+			// We don't check return value, it it is an INROOM message,
+			// we can ignore it (the client has been notified that it must leave
+			// the room, and shall not be waiting for an answer to a room query).
 			processOutRoomMessage(message);
 		}
 	}
@@ -171,7 +174,7 @@ public class NCServerThread extends Thread {
 				String text = ((NCDirectMessage)message).getText();
 				DataOutputStream connection = serverManager.getConnectionWith(receiver);
 				if(connection != null) {
-					connection.writeUTF(new NCSecretMessage(user,text).encode());
+					connection.writeUTF(new NCNewDirectMessage(user,text).encode());
 					dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
 				}else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
 			}else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
@@ -231,7 +234,7 @@ public class NCServerThread extends Thread {
 				String text = dmMessage.getText();
 				DataOutputStream connection = serverManager.getConnectionWith(receiver);
 				if (connection != null) {
-					connection.writeUTF(new NCSecretMessage(user,text).encode());
+					connection.writeUTF(new NCNewDirectMessage(user,text).encode());
 					dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
 				} else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
 			} else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());

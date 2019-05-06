@@ -3,9 +3,9 @@ package messageFV;
 import java.util.Collection;
 
 public final class NCMessageEncoder implements IFieldEncoder {
-	private static final char DELIMITER = ':';	//Define el delimitador
-	private static final char SEPARATOR = '&';	// Defines the separator character (copied from NCMessageEncoder)
-	private static final char END_LINE = '\n';	//Define el carácter de fin de línea
+	private static final char DELIMITER = ':';	// Delimiter character (between field names and values)
+	private static final char SEPARATOR = '&';	// Separator character (between various values)
+	private static final char END_LINE = '\n';	// End of line character
 	private static final String OPCODE_FIELD = "Operation";
 	private final StringBuffer sb = new StringBuffer();
 	

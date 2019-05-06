@@ -9,7 +9,7 @@ import java.util.Map;
 import messageFV.NCMessageType;
 import messageFV.messages.NCControlMessage;
 import messageFV.messages.NCNotificationMessage;
-import messageFV.messages.NCTextMessage;
+import messageFV.messages.NCNewTextMessage;
 import server.NCServerManager;
 import server.NCServerThread;
 
@@ -69,7 +69,7 @@ public class NCGlobalRoom implements NCRoomManager {
 		for(Map.Entry<String, UserInfo> entry : members.entrySet()) {
 			if (!entry.getKey().equals(user)) {
 				try {
-					entry.getValue().dos.writeUTF(new NCTextMessage(user, message).encode());
+					entry.getValue().dos.writeUTF(new NCNewTextMessage(user, message).encode());
 				} catch (IOException e) {
 					System.out.println("* Could not write to user " + entry.getKey() + " from room " + roomName);
 				}

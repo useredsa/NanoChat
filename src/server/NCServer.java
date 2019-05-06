@@ -8,7 +8,7 @@ import java.net.Socket;
 import directory.connector.DirectoryConnector;
 
 
-public class NanoChatServer implements Runnable {
+public class NCServer implements Runnable {
 
 	public static final int PORT = 6969;
 	private static final int MYPROTOCOL = 163;
@@ -20,12 +20,12 @@ public class NanoChatServer implements Runnable {
     private DirectoryConnector directory;		// Class to communicate with the directory
     private static String directoryHostname;	// Directory's address
 
-    public static NanoChatServer create(int port) throws IOException {
-    	return new NanoChatServer(new InetSocketAddress(port));
+    public static NCServer create(int port) throws IOException {
+    	return new NCServer(new InetSocketAddress(port));
     }
     
     // Private Constructor. Objects are meant to be created using the method create(port)
-    private NanoChatServer(InetSocketAddress a) {
+    private NCServer(InetSocketAddress a) {
     	this.socketAddress = a;
     	manager = new NCServerManager();
     }
@@ -89,7 +89,7 @@ public class NanoChatServer implements Runnable {
     		return;
     	} else 
     		directoryHostname = args[0];
-       	NanoChatServer server = NanoChatServer.create(PORT);
+       	NCServer server = NCServer.create(PORT);
      	server.init();
     }
 }

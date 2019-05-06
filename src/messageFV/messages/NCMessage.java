@@ -33,10 +33,10 @@ public interface NCMessage {
 			decodedMessage = NCNotificationMessage.decode(dec);
 			break;
 		case NEW_DM:
-			decodedMessage = NCSecretMessage.decode(dec);
+			decodedMessage = NCNewDirectMessage.decode(dec);
 			break;
 		case NEW_MESSAGE:
-			decodedMessage = NCTextMessage.decode(dec);
+			decodedMessage = NCNewTextMessage.decode(dec);
 			break;
 		case PROMOTE:
 			decodedMessage = NCPromoteMessage.decode(dec);

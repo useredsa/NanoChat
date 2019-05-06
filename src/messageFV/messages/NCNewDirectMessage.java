@@ -5,7 +5,7 @@ import messageFV.NCMessageDecoder;
 import messageFV.NCMessageEncoder;
 import messageFV.NCMessageType;
 
-public class NCSecretMessage implements NCMessage {
+public class NCNewDirectMessage implements NCMessage {
 	static private final NCMessageType MESSAGE_OP = NCMessageType.NEW_DM;
 	static private final String USER_FIELD = "User";
 	static private final String TEXT_FIELD = "Text";
@@ -13,7 +13,7 @@ public class NCSecretMessage implements NCMessage {
 	private final String text;
 	
 	
-	public NCSecretMessage(String user, String text) {
+	public NCNewDirectMessage(String user, String text) {
 		this.user = user;
 		this.text = text;
 	}
@@ -32,10 +32,10 @@ public class NCSecretMessage implements NCMessage {
 				.toString();
 	}
 	
-	static NCSecretMessage decode(NCMessageDecoder dec) throws InvalidFormat {
+	static NCNewDirectMessage decode(NCMessageDecoder dec) throws InvalidFormat {
 		String user = dec.decodeField(USER_FIELD);
 		String text = dec.decodeField(TEXT_FIELD);
-		return new NCSecretMessage(user,text);
+		return new NCNewDirectMessage(user,text);
 	}
 	
 	public String getText() {
