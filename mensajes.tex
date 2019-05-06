@@ -1,0 +1,189 @@
+%%%% Comandos
+
+\newcommand{\str}[1]{\texttt{\char`\"}\texttt{#1}\texttt{\char`\"}}
+
+\newenvironment{displayMessage}[1]
+{\renewcommand{\arraystretch}{1.3} % General space between rows (1 standard)
+\begin{table}[H]
+    \centering
+    \refstepcounter{table}\label{message:#1}
+    \begin{tabular}{|l p{0.7\textwidth}|}
+    \multicolumn{2}{c}{\large Mensaje #1} \\
+    \hline
+}
+{
+    \hline
+    \end{tabular}
+\end{table}
+}
+\definecolor{opColor}{rgb}{0.9,0.6,0.1}
+\newenvironment{displayControlMessage}[2]
+{
+\begin{displayMessage}{#1}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{#2} \\
+            \end{tabular} \\
+\hline
+Descripción: &
+}
+{
+ \\
+\end{displayMessage}
+}
+
+%%%% Comienzo
+\label{sec:listado}
+
+\begin{displayMessage}{Register}
+Formato: &  \begin{tabular}{l l}
+                Operation:  & \str{Register} \\
+                User:       & \str{<username>} \\
+            \end{tabular} \\
+\hline
+Descripción: & Mensaje para registrar un \keyw{nickname} en el servidor de chat. \\
+
+Uso:         & El mensaje solo puede ser enviado cuando el cliente se encuentra en el estado \lstinline!PRE-REGISTER!.  El nickname no puede contener el carácter separador (\lstinline!&!).\\
+\end{displayMessage}
+\begin{displayControlMessage}{List Rooms}{Get room list}
+Mensaje de control que envía el cliente cuando solicita la lista de salas.
+\end{displayControlMessage}
+\begin{displayMessage}{Create}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Create} \\
+                Room:           & \str{<room name>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje para crear una \keyw{sala} en el servidor de chat. \\
+\end{displayMessage}
+\begin{displayMessage}{Enter}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Enter} \\
+                Room:           & \str{<room name>} \\
+            \end{tabular}\\
+\hline 
+Descripción: & Mensaje para entrar en una \keyw{sala} del servidor de chat. \\
+\end{displayMessage}
+\begin{displayControlMessage}{Info}{Get info}
+Mensaje de control que envía el cliente cuando solicita la información detallada de la sala en la que se encuentra.
+\end{displayControlMessage}
+\begin{displayMessage}{Promote}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Promote} \\
+                User:           & \str{<username>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje para hacer \keyw{administrador de sala} a otro usuario. \\
+\end{displayMessage}
+\begin{displayMessage}{Kick}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{RICKROLL} \\
+                User:           & \str{<username>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje para echar de una sala a otro usuario. \\
+\end{displayMessage}
+\begin{displayMessage}{Send}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Send} \\
+                Text:           & \str{<message>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje que envía el cliente para enviar un mensaje de chat cuando está en una sala. \\
+\end{displayMessage}
+\begin{displayMessage}{DM}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{DM} \\
+                User:           & \str{<username>} \\
+                Text:           & \str{<message>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje directo del cliente hacia otro usuario en específico. \\
+\end{displayMessage}
+\begin{displayControlMessage}{Exit}{Exit room}
+Mensaje de control que envía el cliente para salir de una sala.
+\end{displayControlMessage}
+\begin{displayControlMessage}{Quit}{Quit}
+Mensaje de control que envía el cliente al dejar el servidor.
+\end{displayControlMessage}
+
+
+
+
+\begin{displayControlMessage}{Ok}{Ok}
+Mensaje de control que indica que una operación se llevó a cabo correctamente.
+\end{displayControlMessage}
+\begin{displayControlMessage}{Denied}{Denied}
+Mensaje de control que indica que una operación no se pudo realizar porque no le está permitida al usuario. Por ejemplo, podría ser una respuesta del servidor al renombrar una sala en la que no tiene permisos o introducir un \keyw{nickname} que contiene algún caracter ilegal.
+\end{displayControlMessage}
+\begin{displayControlMessage}{Repeated}{Repeated}
+Mensaje de control que indica que una operación no se pudo realizar porque no preserva la unicidad de algún elemento. Por ejemplo, podría ser una respuesta del servidor al intentar renombrar una sala con un nombre de otra sala ya existente.
+\end{displayControlMessage}
+\begin{displayControlMessage}{Impossible}{Impossible}
+Mensaje de control que indica que una operación no se pudo realizar porque no es posible. Por ejemplo, podría ser una respuesta del servidor al intentar echar a un usuario de una sala cuando el usuario no está en la sala.
+\end{displayControlMessage}
+\begin{displayControlMessage}{Kicked}{YOU GOT RICKROLLED}
+Mensaje de control que le llega a un usuario cuando ha sido expulsado de una sala.
+\end{displayControlMessage}
+\begin{displayMessage}{Rooms List}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Rooms List} \\
+                Room:           & \str{<room name>} \\
+                Users:          & \str{<username>\&<username>\&\ldots\&<username>} \\
+                Last Message:   & \str{<last message time>} \\
+                \multicolumn{2}{c}{\ldots} \\
+                Room:           & \str{<room name>} \\
+                Users:          & \str{<username>\&<username>\&\ldots\&<username>} \\
+                Last Message:   & \str{<last message time>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Este mensaje lista las salas del servidor junto con su información básica. Para cada sala en el servidor, vienen tres campos consecutivos. El campo \lstinline!Room! contiene el nombre de la sala, el campo \lstinline!Users! contiene los usuarios que hay dentro de la sala o nada si no hay ninguno y el campo \lstinline!Last Message! contiene la fecha del último mensaje codificada en milisegundos transcurridos desde 1970. Para codificar que nadie ha escrito aún en la sala, el campo \lstinline!Last Message! debe valer 0. \\
+\end{displayMessage}
+\begin{displayMessage}{Rooms Info} %TODO completar
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Room info} \\
+                Room:           & \str{<room name>} \\
+                Users:          & \str{<username>\&<username>\&\ldots\&<username>} \\
+                Last Message:   & \str{<last message time>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Este mensaje lista la información detallada de la sala en la que nos encontramos. Los campos \lstinline!Room!, \lstinline!Users! y \lstinline!Last Message! siguen el formato del mensaje \mess{Rooms List}. \\
+\end{displayMessage}
+\begin{displayMessage}{New Message}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{New text message} \\
+                User:           & \str{<username>} \\
+                Text:           & \str{<text>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje enviado por el servidor a un cliente cuando otro usuario de su sala escribió en el chat.\\
+\end{displayMessage}
+\begin{displayMessage}{New DM}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{New DM} \\
+                User:           & \str{<username>} \\
+                Text:           & \str{<text>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje enviado por el servidor a un cliente cuando otro usuario le escribe un mensaje secreto.\\
+\end{displayMessage}
+\begin{displayMessage}{Notification}
+Formato: &  \begin{tabular}{l l}
+                Operation:      & \str{Action} \\
+                User:           & \str{<username>} \\
+                Action:         & \str{<operation>} \\
+                Object:         & \str{<object>} \\
+            \end{tabular}\\
+\hline
+Descripción: & Mensaje enviado por el servidor a un cliente para notificarle de un evento que sucede en su sala, como que un usuario echó a otro de la sala. \\
+Uso: & Ejemplo de un mensaje que notifica de la expulsión del usuario \str{alb} de la sala por parte de \str{fern}: 
+\begin{lstlisting}
+Operation:Action
+User:fern
+Action:Kicked
+Object:alb
+
+\end{lstlisting} \\
+\end{displayMessage}
+
+
+
