@@ -2,10 +2,9 @@ case DM:
 	String receiver = ((NCDirectMessage)message).getUser();
 	if(!receiver.equals(user)) {
 		String text = ((NCDirectMessage)message).getText();
-		DataOutputStream connection = serverManager
-                                      .getConnectionWith(receiver);				
-        if(connection != null) {
+		DataOutputStream connection = serverManager.getConnectionWith(receiver);				
+        if (connection != null) {
 			connection.writeUTF(new NCSecretMessage(user,text).encode());
 			dos.writeUTF(new NCControlMessage(NCMessageType.OK).encode());
-		}else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
-    }else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
+		} else dos.writeUTF(new NCControlMessage(NCMessageType.DENIED).encode());
+    } else dos.writeUTF(new NCControlMessage(NCMessageType.IMPOSSIBLE).encode());
