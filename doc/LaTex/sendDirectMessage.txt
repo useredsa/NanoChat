@@ -1,21 +1,18 @@
 private void sendDirectMessage(String receiver, 
                                String text) throws IOException {
 
-	NCControlMessage answer = (NCControlMessage) ncConnector
-                                                 .sendDirect(receiver, text);
+	NCControlMessage answer = ncConnector.sendDirect(receiver, text);
 	switch (answer.getType()) {
 		case OK:
 			break;
 		case IMPOSSIBLE:
-			System.out.println("* The user " + receiver + 
-                                " is not logged into the server");
+			System.out.println("* The user " + receiver + " is not logged into the server");
 			break;
 		case DENIED:
 			System.out.println("* You can't send yourself a direct message");
 			break;
 		default:
-			System.out.println("* An error occurred while trying 
-                                to contact with " + receiver);
+			System.out.println("* An error occurred while trying to contact with " + receiver);
 			break;
 	}
 }
