@@ -66,12 +66,12 @@
 }
 
 \definecolor{javakeywords}{rgb}{0.3,0.3,1}
-\definecolor{javacomments}{rgb}{0.2,1,0.2}
-\definecolor{javastrings}{rgb}{0.2,0.7,0.2}
+\definecolor{javacomments}{rgb}{0.7,0.3,0.2}
+\definecolor{javastrings}{rgb}{0.7,0.2,0.7}
 \lstdefinestyle{JavaStyle}{
     language=java,                          % the language of the code
     frame=L,                            % adds a frame around the code
-    %rulecolor=\color{black},                  % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments)
+    rulecolor=\color{black},                  % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments)
     %backgroundcolor=\color{codebackground}, % choose the background color
     basicstyle=\footnotesize\ttfamily,        % the size of the fonts that are used for the code
     keywordstyle=\color{javakeywords},                % keyword style
@@ -83,6 +83,9 @@
     %stepnumber=10,                             % the step between two line-numbers. If it's 1, each line will be numbered
     tabsize=4,                                % sets default tabsize to 2 spaces
     showstringspaces=false,                   % underline spaces within strings only
+    captionpos=t,                             % sets the caption-position to bottom
+    %title=\lstname,                          % show the filename of files included with \lstinputlisting;
+    columns=flexible,
 }
 
 \usepackage{multicol} 
