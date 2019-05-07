@@ -19,7 +19,7 @@ public enum NCMessageType {
 	QUIT("Quit"),
 	
 	// Server's opcodes
-	OK("Accepted"), 
+	OK("OK"), 
 	DENIED("Denied"),
 	REPEATED("Duplicated"),
 	IMPOSSIBLE("Impossible"),

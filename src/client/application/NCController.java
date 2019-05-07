@@ -312,7 +312,7 @@ public class NCController {
 	
 	//Método para enviar un mensaje directo a un usuario registrado en el servidor
 	private void sendDirectMessage(String receiver, String text) throws IOException {
-		NCControlMessage answer = (NCControlMessage) ncConnector.sendDirect(receiver, text);
+		NCControlMessage answer = ncConnector.sendDirect(receiver, text);
 		switch (answer.getType()) {
 			case OK:
 				break;

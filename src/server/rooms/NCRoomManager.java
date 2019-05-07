@@ -42,19 +42,22 @@ public interface NCRoomManager {
 	
 	/**
 	 * Processes a request to rename the room. The function returns a control message of type:
+	 * @param user The user that performs the operation.
+	 * @param newName The new name of the room.
+	 * @return
 	 * <ul>
 	 * <li> OK if the operation is performed successfully.</li> 
 	 * <li> IMPOSSIBLE if the room doesn't implement this functionality</li>
 	 * <li> DENIED if the user can't perform this operation (because they don't have the necessary rights).</li>
 	 * <li> REPEATED if there is another room with the new name </li>
 	 * </ul>
-	 * @param user The user that performs the operation.
-	 * @param newName The new name of the room.
-	 * @return 0 if the operation was successfully performed. For other return values, check the description.
 	 */
 	public abstract NCControlMessage rename(String user, String newName);
 	/**
 	 * Processes a request to promote another user to administrator. The function returns:
+	 * @param user The user that performs the operation.
+	 * @param promoted The user being promoted
+	 * @return
 	 * <ul>
 	 * <li> OK if the operation is performed successfully.</li>
 	 * <li> IMPOSSIBLE if the room doesn't implement this functionality.</li>
@@ -62,13 +65,13 @@ public interface NCRoomManager {
 	 * <li> REPEATED if the user being promoted is already an administrator.</li>
 	 * <li> IMPOSSIBLE if the user is not in this room </li>
 	 * </ul>
-	 * @param user The user that performs the operation.
-	 * @param promoted The user being promoted
-	 * @return 0 if the operation was successfully performed. For other return values, check the description.
 	 */
 	public abstract NCControlMessage promote(String user, String promoted);
 	/**
 	 * Processes a request to kick another user from the room.
+	 * @param user The user that performs the operation.
+	 * @param kicked The user being kicked
+	 * @return
 	 * <ul>
 	 * <li> OK if the operation is performed successfully.</li>
 	 * <li> IMPOSSIBLE if the room doesn't implement this functionality</li>
@@ -76,9 +79,6 @@ public interface NCRoomManager {
 	 * <li> DENIED If the user being kicked can't be kicked from this room.</li>
 	 * <li> IMPOSSIBLE if the user being kicked is not in the room.</li>
 	 * </ul>
-	 * @param user The user that performs the operation.
-	 * @param kicked The user being kicked
-	 * @return 0 if the operation was successfully performed. For other return values, check the description.
 	 */
 	public abstract NCControlMessage kick(String user, String kicked);
 }
